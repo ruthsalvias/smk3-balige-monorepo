@@ -1,5 +1,5 @@
 // Alamat API Gateway (Nginx). Saat aplikasi dilayani oleh Nginx (port 8080 atau
-// lewat tunnel HTTPS), API dan Keycloak diproksikan pada origin yang sama.
+// lewat tunnel HTTPS), API diproksikan pada origin yang sama.
 // Hanya dev server Vite (5173) yang perlu menunjuk langsung ke port gateway.
 const PORT_GATEWAY = "6766";
 const PORT_DEV = "5173";

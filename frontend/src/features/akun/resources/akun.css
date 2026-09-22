@@ -167,3 +167,90 @@
   font-size: 14px;
   color: #4b5563;
 }
+
+/* ══════════════════════════════════════════════
+   HALAMAN MASUK
+══════════════════════════════════════════════ */
+.smk-masuk {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #0f2547;
+}
+
+.smk-masuk-box {
+  width: 100%;
+  max-width: 400px;
+  padding: 36px 32px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.smk-masuk-box h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: #12305e;
+  text-align: center;
+}
+
+.smk-masuk-box > p {
+  margin: 0 0 24px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5b6a80;
+  text-align: center;
+}
+
+.smk-masuk-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #33415c;
+}
+
+.smk-masuk-input {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 11px 13px;
+  border: 1px solid #ccd6e5;
+  border-radius: 9px;
+  font-size: 14px;
+  color: #12305e;
+}
+
+.smk-masuk-input:focus {
+  outline: none;
+  border-color: #1c3f7c;
+  box-shadow: 0 0 0 3px rgba(28, 63, 124, 0.14);
+}
+
+.smk-masuk-pesan {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #fdeaea;
+  color: #a02323;
+  font-size: 13px;
+}
+
+.smk-masuk-tombol {
+  width: 100%;
+}
+
+.smk-masuk-kembali {
+  display: block;
+  margin-top: 18px;
+  font-size: 12.5px;
+  color: #5b6a80;
+  text-align: center;
+  text-decoration: none;
+}
+
+.smk-masuk-kembali:hover {
+  color: #1c3f7c;
+  text-decoration: underline;
+}

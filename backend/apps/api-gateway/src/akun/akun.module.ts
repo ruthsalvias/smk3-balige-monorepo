@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AkunController } from './akun.controller';
-import { KeycloakAdminService } from './keycloak-admin.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
+  imports: [AuthModule],
   controllers: [AkunController],
-  providers: [KeycloakAdminService],
 })
 export class AkunModule {}

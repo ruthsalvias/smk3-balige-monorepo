@@ -1,4 +1,3 @@
-import keycloak from "../config/keycloak";
 import GATEWAY from "../config/gateway";
 
 // Semua request manajemen data lewat API Gateway (Nginx) pada prefix /api/management.
@@ -7,7 +6,6 @@ export const BASE_URL = `${GATEWAY_URL}/api/management`;
 
 export function getAccessToken() {
   return (
-    keycloak.token ||
     localStorage.getItem("token") ||
     localStorage.getItem("accessToken") ||
     ""

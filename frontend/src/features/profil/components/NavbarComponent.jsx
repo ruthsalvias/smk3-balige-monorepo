@@ -145,13 +145,15 @@ export default function Navbar() {
         </nav>
 
         <div className="smk-nav-actions">
-          {/* Tombol login sengaja tidak ditampilkan ke publik.
-              Admin masuk lewat URL panel rahasia. */}
-          {isAuth && (
+          {isAuth ? (
             <>
               <span className="smk-nav-user">{user?.name || user?.username}</span>
               <button className="smk-btn-login ghost" onClick={logout}>Keluar</button>
             </>
+          ) : (
+            <NavLink to="/masuk" className="smk-btn-login" onClick={() => setOpen(false)}>
+              Masuk
+            </NavLink>
           )}
           <button
             className="smk-nav-burger"

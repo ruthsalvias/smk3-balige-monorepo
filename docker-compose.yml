@@ -1,7 +1,7 @@
 name: smk3
 
 # =============================================================================
-# SMK3 MONOREPO — seluruh aplikasi (frontend + backend + Keycloak) hanya
+# SMK3 MONOREPO — seluruh aplikasi (frontend + backend) hanya
 # terekspos lewat SATU port: service `gateway` (default 8080).
 # Service lain tidak mem-publish port apa pun ke host.
 # =============================================================================
@@ -9,7 +9,7 @@ name: smk3
 services:
   # ===========================================================================
   # EDGE GATEWAY (SATU-SATUNYA PORT PUBLIK)
-  # SPA React + reverse proxy ke api-gateway, Keycloak, dan file upload.
+  # SPA React + reverse proxy ke api-gateway dan file upload.
   # ===========================================================================
   gateway:
     build:
@@ -20,7 +20,6 @@ services:
       - '${APP_PORT:-8080}:80'
     depends_on:
       - api-gateway
-      - keycloak
     networks:
       smk3_network:
         aliases:
@@ -30,51 +29,24 @@ services:
   # ===========================================================================
   # INFRASTRUKTUR INTI
   # ===========================================================================
-  db-keycloak:
+  db-auth:
     image: postgres:15
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${KC_DB_NAME}
-      POSTGRES_USER: ${KC_DB_USER}
-      POSTGRES_PASSWORD: ${KC_DB_PASS}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASS}
     volumes:
-      - db_keycloak_data:/var/lib/postgresql/data
+      - db_auth_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${KC_DB_USER} -d ${KC_DB_NAME}']
+      test: ['CMD-SHELL', 'pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       smk3_network:
         aliases:
-          - db_keycloak
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0.3
-    command: start --import-realm
-    restart: unless-stopped
-    environment:
-      KEYCLOAK_ADMIN: ${KC_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://db-keycloak:5432/${KC_DB_NAME}
-      KC_DB_USERNAME: ${KC_DB_USER}
-      KC_DB_PASSWORD: ${KC_DB_PASS}
-      KC_HOSTNAME_STRICT: 'false'
-      # TLS diterminasi di depan gateway, jadi Keycloak cukup melayani HTTP.
-      KC_HTTP_ENABLED: 'true'
-      # Wajib: issuer token mengikuti origin publik yang diteruskan gateway.
-      KC_PROXY_HEADERS: xforwarded
-      KC_HEALTH_ENABLED: 'true'
-    volumes:
-      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
-    depends_on:
-      db-keycloak:
-        condition: service_healthy
-    networks:
-      smk3_network:
-        aliases:
-          - sekolah_keycloak
+          - db_auth
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -209,26 +181,31 @@ services:
       # Semua request datang dari origin yang sama lewat gateway.
       - CORS_ORIGIN=${PUBLIC_ORIGIN}
       - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
-      # Issuer token Keycloak mengikuti origin publik.
-      - KEYCLOAK_ISSUER=${PUBLIC_ORIGIN}/realms/${KEYCLOAK_REALM}
-      - KEYCLOAK_JWKS_URL=${KEYCLOAK_JWKS_URL}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-      - KEYCLOAK_SECRET=${KEYCLOAK_SECRET}
-      - KEYCLOAK_ADMIN_URL=${KEYCLOAK_ADMIN_URL}
-      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
-      - KEYCLOAK_PUBLIC_CLIENT_ID=${KEYCLOAK_PUBLIC_CLIENT_ID}
+      # Autentikasi lokal: database akun + kunci penandatangan token.
+      - DATABASE_URL=${AUTH_DB_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_SECONDS=${JWT_EXPIRES_SECONDS:-28800}
+      - MASTER_ADMIN_USERNAME=${MASTER_ADMIN_USERNAME}
+      - MASTER_ADMIN_PASSWORD=${MASTER_ADMIN_PASSWORD}
+      - MASTER_ADMIN_NAMA=${MASTER_ADMIN_NAMA:-Master Admin}
       - SERVICE_PELANGGARAN_URL=${SERVICE_PELANGGARAN_URL}
       - SERVICE_PROFILE_URL=${SERVICE_PROFILE_URL}
       - SERVICE_BERITA_URL=${SERVICE_BERITA_URL}
       - SERVICE_PORTOFOLIO_URL=${SERVICE_PORTOFOLIO_URL}
       - SERVICE_MANAGEMENT_URL=${SERVICE_MANAGEMENT_URL}
     depends_on:
-      - keycloak
-      - service-pelanggaran
-      - service-profile
-      - service-berita
-      - service-portofolio
-      - service-management
+      db-auth:
+        condition: service_healthy
+      service-pelanggaran:
+        condition: service_started
+      service-profile:
+        condition: service_started
+      service-berita:
+        condition: service_started
+      service-portofolio:
+        condition: service_started
+      service-management:
+        condition: service_started
     networks:
       smk3_network:
         aliases:
@@ -367,7 +344,7 @@ services:
 # PERSISTENT STORAGE
 # =============================================================================
 volumes:
-  db_keycloak_data:
+  db_auth_data:
   db_pelanggaran_data:
   db_profile_data:
   db_berita_data:

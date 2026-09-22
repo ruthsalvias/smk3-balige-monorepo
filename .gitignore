@@ -7,7 +7,7 @@
 node_modules
 dist
 dist-ssr
-frontend/public_html
+/public_html
 backend/dist
 
 # Berkas unggahan pengguna (data runtime, bukan bagian kode)

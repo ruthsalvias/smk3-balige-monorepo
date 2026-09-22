@@ -25,6 +25,5 @@ async function bootstrap() {
 
   logger.log(`🚀 Gateway running on http://localhost:${port}`);
   logger.log(`📡 CORS origin: ${corsOrigin}`);
-  logger.log(`🔐 Keycloak issuer: ${process.env.KEYCLOAK_ISSUER}`);
 }
 bootstrap();

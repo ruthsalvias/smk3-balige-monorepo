@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtStrategy } from './auth/jwt.strategy';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
+import { AuthModule } from './auth/auth.module';
+import { Pengguna } from './auth/pengguna.entity';
 import { ProxyModule } from './proxy/proxy.module';
 import { AkunModule } from './akun/akun.module';
 import { GatewayController } from './gateway.controller';
@@ -14,6 +16,14 @@ import { GatewayController } from './gateway.controller';
   imports: [
     // Load .env globally
     ConfigModule.forRoot({ isGlobal: true }),
+
+    // Database akun pengguna
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url: process.env.DATABASE_URL,
+      entities: [Pengguna],
+      synchronize: true,
+    }),
 
     // Passport with default 'jwt' strategy
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -24,7 +34,10 @@ import { GatewayController } from './gateway.controller';
       limit: 60,
     }]),
 
-    // Manajemen akun Keycloak khusus master admin
+    // Login, verifikasi token, dan penyimpanan akun
+    AuthModule,
+
+    // Manajemen akun khusus master admin
     AkunModule,
 
     // Proxy module
@@ -32,8 +45,6 @@ import { GatewayController } from './gateway.controller';
   ],
   controllers: [GatewayController],
   providers: [
-    JwtStrategy,
-
     // Global guards — order matters: throttle → auth → roles
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },

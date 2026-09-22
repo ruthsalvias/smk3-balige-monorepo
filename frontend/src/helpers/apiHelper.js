@@ -1,4 +1,3 @@
-import keycloak from "../config/keycloak";
 import GATEWAY from "../config/gateway";
 
 // Semua request lewat API Gateway (Nginx); resource profil berada di prefix /api/profile.
@@ -32,7 +31,6 @@ const apiHelper = (() => {
 
   function getAccessToken() {
     return (
-      keycloak.token ||
       localStorage.getItem("token") ||
       localStorage.getItem("accessToken") ||
       ""

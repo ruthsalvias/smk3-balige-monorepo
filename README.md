@@ -7,8 +7,6 @@ dijalankan penuh dengan Docker Compose dan **hanya membuka satu port**.
 frontend/          SPA React (Vite)
 backend/           NestJS monorepo: api-gateway + 5 service
 docker/gateway/    Nginx edge gateway (Dockerfile + konfigurasi)
-docker/keycloak/   Realm export yang diimpor otomatis saat pertama kali jalan
-tools/             Skrip operasional (pembuatan akun superadmin)
 docker-compose.yml Seluruh stack
 ```
 
@@ -17,16 +15,14 @@ docker-compose.yml Seluruh stack
 Service `gateway` (Nginx) adalah satu-satunya container yang mem-publish port ke host.
 Semua yang lain hanya bisa diakses dari jaringan internal Docker.
 
-| Path                                | Diteruskan ke              |
-| ----------------------------------- | -------------------------- |
-| `/`                                 | file statis SPA React      |
-| `/api/`                             | `api-gateway` (NestJS)     |
-| `/uploads/`                         | `service-berita`           |
-| `/realms/`, `/resources/`, `/js/`   | Keycloak (login & token)   |
-| `/admin/`                           | Keycloak admin console     |
-| `/health`                           | health check gateway       |
+| Path        | Diteruskan ke          |
+| ----------- | ---------------------- |
+| `/`         | file statis SPA React  |
+| `/api/`     | `api-gateway` (NestJS) |
+| `/uploads/` | `service-berita`       |
+| `/health`   | health check gateway   |
 
-Karena frontend, API, dan Keycloak berbagi origin yang sama, tidak ada masalah
+Karena frontend dan API berbagi origin yang sama, tidak ada masalah
 CORS maupun cookie lintas domain.
 
 ## Menjalankan
@@ -42,8 +38,9 @@ Aplikasi terbuka di `http://localhost:8080` (ubah lewat `APP_PORT`).
 
 - `APP_PORT` — port di host.
 - `PUBLIC_ORIGIN` — alamat yang dipakai pengguna di browser, **persis** termasuk
-  skema dan port. Nilai ini dipakai untuk `CORS_ORIGIN` dan `KEYCLOAK_ISSUER`.
-  Kalau salah, login akan ditolak dengan error issuer.
+  skema dan port. Nilai ini dipakai untuk `CORS_ORIGIN`.
+- `JWT_SECRET` — kunci penandatangan token login, minimal 32 karakter acak.
+  Api-gateway menolak start bila kosong atau terlalu pendek.
 
 Contoh di belakang reverse proxy/HTTPS:
 
@@ -52,20 +49,14 @@ APP_PORT=8080
 PUBLIC_ORIGIN=https://smkn3balige.sch.id
 ```
 
-## Membuat akun superadmin
+## Akun master admin
 
-Realm `smk3` diimpor tanpa akun pengguna. Setelah stack jalan, buat satu akun
-superadmin (sekaligus menulis `KEYCLOAK_SECRET` ke `.env`):
+Akun master admin dibuat otomatis saat api-gateway pertama kali jalan, memakai
+`MASTER_ADMIN_USERNAME`, `MASTER_ADMIN_PASSWORD`, dan `MASTER_ADMIN_NAMA` di `.env`.
+Bila akun dengan username itu sudah ada, tidak ada yang diubah.
 
-```bash
-set KC_ADMIN_PASSWORD=<password admin Keycloak dari .env>
-set MASTER_ADMIN_PASSWORD=<password untuk akun superadmin>
-node tools/setup-master-admin.mjs masteradminsmk3
-
-docker compose up -d --no-deps --force-recreate api-gateway
-```
-
-Skrip tidak pernah menampilkan password di layar.
+Login lewat tombol **Masuk** di navbar situs (`/masuk`). Akun guru dan siswa
+dibuat dari menu **Kelola Akun** di panel admin.
 
 ## Perintah harian
 
@@ -90,7 +81,6 @@ gateway berjalan di alamat lain.
 ## Catatan keamanan
 
 - `.env` tidak ikut ter-commit. Semua nilai `ganti-...` wajib diganti sebelum deploy.
-- Blok `location /admin/` di [docker/gateway/default.conf](docker/gateway/default.conf)
-  membuka Keycloak admin console pada origin publik. Hapus blok itu bila console
-  cukup diakses lewat jaringan internal.
+- `JWT_SECRET` dan `MASTER_ADMIN_PASSWORD` adalah rahasia utama sistem. Ganti
+  `JWT_SECRET` akan membuat semua sesi login yang aktif langsung berakhir.
 - Folder `backend/uploads` berisi data runtime pengguna dan tidak ikut ter-commit.
