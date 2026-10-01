@@ -34,3 +34,7 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Unggahan runtime (bind mount docker-compose)
+/uploads/*
+!/uploads/**/.gitkeep

@@ -2,11 +2,15 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
-import * as XLSX from 'xlsx';
 import { DokumenSiswa, Siswa } from '../../models/SiswaModel';
 import { CreateSiswaDto } from './dto/create-siswa.dto';
 import { UpdateSiswaDto } from './dto/update-siswa.dto';
-import { isContohRow, pickField, readSheetRows } from '../../common/excel.util';
+import {
+  isContohRow,
+  pickField,
+  readSheetRows,
+  writeSheetBuffer,
+} from '../../common/excel.util';
 
 export type SiswaFileType = 'rapor' | 'skl' | 'ijazah';
 
@@ -240,7 +244,8 @@ export class SiswaService {
       ? (await this.search({ q: search })).data.siswa
       : await this.siswaRepository.find({ order: { namaLengkap: 'ASC' } });
 
-    const sheet = XLSX.utils.json_to_sheet(
+    return writeSheetBuffer(
+      'Siswa',
       rows.map((item, index) => ({
         No: index + 1,
         NISN: item.nisn,
@@ -254,14 +259,10 @@ export class SiswaService {
         Status: item.status,
       })),
     );
-
-    const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, 'Siswa');
-    return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
   }
 
   async importFromBuffer(buffer: Buffer) {
-    const rows = readSheetRows(buffer, [
+    const rows = await readSheetRows(buffer, [
       'NISN',
       'NIS',
       'Nama Lengkap',

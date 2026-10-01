@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 /** Samakan penulisan header: buang teks dalam kurung, spasi, dan tanda baca. */
 function normalizeKey(value: unknown): string {
@@ -9,25 +9,43 @@ function normalizeKey(value: unknown): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
+function cellToString(value: ExcelJS.CellValue): string {
+  if (value == null) return '';
+  if (typeof value === 'object') {
+    if ('text' in value && value.text != null) return String(value.text).trim();
+    if ('result' in value && value.result != null) return String(value.result).trim();
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+  }
+  return String(value).trim();
+}
+
+function sheetToMatrix(sheet: ExcelJS.Worksheet): string[][] {
+  const matrix: string[][] = [];
+  sheet.eachRow({ includeEmpty: false }, (row) => {
+    const values = row.values as ExcelJS.CellValue[];
+    const cells: string[] = [];
+    for (let i = 1; i < values.length; i += 1) {
+      cells.push(cellToString(values[i]));
+    }
+    matrix.push(cells);
+  });
+  return matrix;
+}
+
 /**
  * Baca sheet pertama sebagai daftar objek. Baris header dicari otomatis (maks 15
  * baris pertama) supaya template dengan judul dan catatan di atas tabel tetap terbaca.
  */
-export function readSheetRows(
+export async function readSheetRows(
   buffer: Buffer,
   headerHints: string[],
-): Record<string, string>[] {
-  const book = XLSX.read(buffer, { type: 'buffer' });
-  const sheetName = book.SheetNames[0];
-  if (!sheetName) throw new BadRequestException('File Excel tidak memiliki sheet');
+): Promise<Record<string, string>[]> {
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(buffer as unknown as ExcelJS.Buffer);
+  const sheet = book.worksheets[0];
+  if (!sheet) throw new BadRequestException('File Excel tidak memiliki sheet');
 
-  const matrix = XLSX.utils.sheet_to_json<unknown[]>(book.Sheets[sheetName], {
-    header: 1,
-    blankrows: false,
-    defval: '',
-    raw: false,
-  });
-
+  const matrix = sheetToMatrix(sheet);
   const hints = headerHints.map(normalizeKey);
   let headerIndex = -1;
 
@@ -61,6 +79,26 @@ export function readSheetRows(
   }
 
   return rows;
+}
+
+/** Tulis baris objek ke buffer .xlsx (sheet tunggal). */
+export async function writeSheetBuffer(
+  sheetName: string,
+  rows: Record<string, unknown>[],
+): Promise<Buffer> {
+  const book = new ExcelJS.Workbook();
+  const sheet = book.addWorksheet(sheetName);
+
+  if (rows.length > 0) {
+    const headers = Object.keys(rows[0]);
+    sheet.addRow(headers);
+    for (const row of rows) {
+      sheet.addRow(headers.map((header) => row[header] ?? ''));
+    }
+  }
+
+  const raw = await book.xlsx.writeBuffer();
+  return Buffer.from(raw);
 }
 
 export function pickField(row: Record<string, string>, keys: string[]): string {

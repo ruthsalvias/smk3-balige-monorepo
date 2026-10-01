@@ -4,7 +4,6 @@
   "description": "",
   "author": "",
   "private": true,
-  "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -32,6 +31,7 @@
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "exceljs": "^4.4.0",
     "http-proxy-middleware": "^4.2.0",
     "multer": "^2.2.0",
     "passport-jwt": "^4.0.1",
@@ -41,8 +41,10 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.8",
-    "typeorm": "^0.3.26",
-    "xlsx": "^0.18.5"
+    "typeorm": "^0.3.26"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

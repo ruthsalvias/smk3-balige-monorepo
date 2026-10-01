@@ -33,11 +33,10 @@ async function bootstrap() {
     }),
   );
 
-  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
+  // CORS terbuka; proteksi lewat INTERNAL_GATEWAY_SECRET (X-Gateway-Secret).
   app.enableCors({
-    origin: corsOrigin.split(',').map((o) => o.trim()),
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    credentials: true,
   });
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
