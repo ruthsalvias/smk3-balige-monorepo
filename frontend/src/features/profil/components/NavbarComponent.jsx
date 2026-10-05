@@ -6,11 +6,14 @@ import { mediaUrl } from "../../admin/components/AdminComponents";
 import Icon from "../../../components/Icon";
 import { ADMIN_PATH } from "../../../config/adminPath";
 
-const menu = [
+const menu = (isSiswa) => [
   { to: "/", label: "Beranda", end: true },
   { to: "/berita", label: "Berita & Informasi" },
   { to: "/profil", label: "Profil Sekolah", sections: true },
-  { to: "/portofolio", label: "Portofolio" },
+  {
+    to: isSiswa ? "/portofolio/kelola" : "/portofolio",
+    label: "Portofolio",
+  },
 ];
 
 // Sesuai judul besar tiap bagian di halaman Profil Sekolah.
@@ -73,7 +76,7 @@ export default function Navbar() {
         </NavLink>
 
         <nav className={`smk-nav-menu${open ? " open" : ""}`}>
-          {menu.map((item) =>
+          {menu(isSiswa).map((item) =>
             item.sections ? (
               <div
                 key={item.to}

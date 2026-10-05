@@ -13,6 +13,8 @@ const DEFAULT_PENGATURAN = {
   email: "",
   jam_operasional: "",
   sosial_media: [],
+  hero_images: [],
+  login_bg_url: null,
 };
 
 const SiteSettingsContext = createContext({
@@ -48,6 +50,8 @@ export function SiteSettingsProvider({ children }) {
           ...DEFAULT_PENGATURAN,
           ...p,
           sosial_media: Array.isArray(p.sosial_media) ? p.sosial_media : [],
+          hero_images: Array.isArray(p.hero_images) ? p.hero_images : [],
+          login_bg_url: p.login_bg_url || null,
         });
       }
       setStatistik(Array.isArray(s) ? s : []);

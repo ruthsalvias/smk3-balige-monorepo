@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import ProfilLayout from "../layouts/ProfilLayout";
 import foto from "../../../assets/images/foto.png";
-import { beritaMediaUrl } from "../../admin/components/AdminComponents";
+import { beritaMediaUrl, mediaUrl } from "../../admin/components/AdminComponents";
 import { asyncGetPrestasi, asyncGetProgramKeahlian, asyncGetMitraKerjasama } from "../states/action";
 import { asyncLoadAllBeritaData } from "../../berita/states/action";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -32,6 +32,28 @@ const ringkas = (text, max = 150) => {
   return bersih.length > max ? `${bersih.slice(0, max)}...` : bersih;
 };
 
+/* ── Hero Carousel Hook ─────────────────────────────────── */
+function useHeroSlider(images, interval = 5000) {
+  const [current, setCurrent] = useState(0);
+  const timerRef = useRef(null);
+  const len = images.length;
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (len > 1) {
+      timerRef.current = setInterval(() => setCurrent((p) => (p + 1) % len), interval);
+    }
+  }, [len, interval]);
+
+  useEffect(() => { resetTimer(); return () => clearInterval(timerRef.current); }, [resetTimer]);
+
+  const next = useCallback(() => { setCurrent((p) => (p + 1) % len); resetTimer(); }, [len, resetTimer]);
+  const prev = useCallback(() => { setCurrent((p) => (p - 1 + len) % len); resetTimer(); }, [len, resetTimer]);
+  const goTo = useCallback((i) => { setCurrent(i); resetTimer(); }, [resetTimer]);
+
+  return { current, next, prev, goTo };
+}
+
 export default function BerandaPage() {
   const dispatch = useDispatch();
   const { pengaturan, statistik } = useSiteSettings();
@@ -39,6 +61,14 @@ export default function BerandaPage() {
   const berita = useSelector((s) => s.berita || []);
   const agenda = useSelector((s) => s.agenda || []);
   const pengumuman = useSelector((s) => s.pengumuman || []);
+
+  // Build hero images array: use DB images if available, fallback to static
+  const heroImages = useMemo(() => {
+    const dbImages = (pengaturan.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+    return dbImages.length > 0 ? dbImages : [foto];
+  }, [pengaturan.hero_images]);
+
+  const { current, next, prev, goTo } = useHeroSlider(heroImages);
 
   useEffect(() => {
     dispatch(asyncGetPrestasi());
@@ -97,6 +127,11 @@ export default function BerandaPage() {
     <ProfilLayout>
       {/* HERO */}
       <section className="smk-beranda-hero">
+        {/* Blurred background layer */}
+        <div
+          className="smk-beranda-hero-bg"
+          style={{ backgroundImage: `url(${heroImages[current]})` }}
+        />
         <div className="smk-beranda-hero-inner">
           <div className="smk-beranda-hero-text">
             <span className="smk-badge">
@@ -116,7 +151,52 @@ export default function BerandaPage() {
             </div>
           </div>
           <div className="smk-beranda-hero-img">
-            <img src={foto} alt={pengaturan.nama_sekolah} />
+            {/* Carousel Slider */}
+            <div className="smk-hero-carousel">
+              <div
+                className="smk-hero-carousel-track"
+                style={{ transform: `translateX(-${current * 100}%)` }}
+              >
+                {heroImages.map((src, i) => (
+                  <div className="smk-hero-carousel-slide" key={i}>
+                    <img src={src} alt={`${pengaturan.nama_sekolah} ${i + 1}`} />
+                  </div>
+                ))}
+              </div>
+
+              {heroImages.length > 1 && (
+                <>
+                  <button
+                    className="smk-hero-carousel-arrow smk-hero-carousel-prev"
+                    onClick={prev}
+                    aria-label="Gambar sebelumnya"
+                    type="button"
+                  >
+                    <Icon name="chevron-left" size={22} />
+                  </button>
+                  <button
+                    className="smk-hero-carousel-arrow smk-hero-carousel-next"
+                    onClick={next}
+                    aria-label="Gambar berikutnya"
+                    type="button"
+                  >
+                    <Icon name="chevron-right" size={22} />
+                  </button>
+
+                  <div className="smk-hero-carousel-dots">
+                    {heroImages.map((_, i) => (
+                      <button
+                        key={i}
+                        className={`smk-hero-carousel-dot${i === current ? " active" : ""}`}
+                        onClick={() => goTo(i)}
+                        aria-label={`Gambar ${i + 1}`}
+                        type="button"
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </section>

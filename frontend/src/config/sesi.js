@@ -22,11 +22,12 @@ export function simpanSesi(token, user) {
   localStorage.setItem(KUNCI_USER, JSON.stringify(user));
   localStorage.setItem("userId", user?.id || "");
   localStorage.setItem("username", user?.username || "");
+  localStorage.setItem("userNama", user?.nama || user?.name || user?.username || "");
   localStorage.setItem("roles", (user?.roles || []).join(","));
 }
 
 export function hapusSesi() {
-  [KUNCI_TOKEN, KUNCI_USER, "userId", "username", "roles", "accessToken"].forEach((k) =>
+  [KUNCI_TOKEN, KUNCI_USER, "userId", "username", "userNama", "roles", "accessToken"].forEach((k) =>
     localStorage.removeItem(k),
   );
 }

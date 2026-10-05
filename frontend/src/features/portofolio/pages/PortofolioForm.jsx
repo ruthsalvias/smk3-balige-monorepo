@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../auth/context/AuthContext';
 import { createPortofolio, updatePortofolio, fetchOnePortofolio } from '../states/action';
+import { getPortofolioImageUrl } from '../api/portofolioApi';
 import Navbar from '../../profil/components/NavbarComponent';
 import Footer from '../../profil/components/FooterComponent';
 import Icon from '../../../components/Icon';
@@ -65,7 +66,7 @@ function PortofolioForm() {
       });
       // Jika di database sudah ada gambar sebelumnya, tampilkan sebagai preview
       if (portfolioToEdit.image) {
-        setImagePreview(portfolioToEdit.image);
+        setImagePreview(getPortofolioImageUrl(portfolioToEdit.image));
       }
     }
   }, [portfolioToEdit, isEditMode]);

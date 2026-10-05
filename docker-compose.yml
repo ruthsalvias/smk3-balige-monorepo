@@ -228,6 +228,9 @@ services:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - PORT=${SERVICE_PELANGGARAN_PORT}
       - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
+      # Sumber data master (siswa & guru) yang dipakai dropdown surat panggilan.
+      - SERVICE_MANAGEMENT_URL=${SERVICE_MANAGEMENT_URL}
+      - MASTER_SYNC_INTERVAL_MS=${MASTER_SYNC_INTERVAL_MS:-300000}
     depends_on:
       db-pelanggaran:
         condition: service_healthy

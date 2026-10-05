@@ -1,8 +1,8 @@
 import {
   Controller, Get, Put, Post,
-  Body, UploadedFile, UseInterceptors, BadRequestException,
+  Body, UploadedFiles, UseInterceptors, BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PengaturanSekolahService } from './pengaturan-sekolah.service';
@@ -14,10 +14,11 @@ const multerOptions = {
     destination: './uploads/pengaturan',
     filename: (req: any, file: any, cb: any) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      cb(null, `logo-${uniqueSuffix}${extname(file.originalname)}`);
+      const prefix = file.fieldname === 'hero_images' ? 'hero' : file.fieldname === 'login_bg' ? 'loginbg' : 'logo';
+      cb(null, `${prefix}-${uniqueSuffix}${extname(file.originalname)}`);
     },
   }),
-  limits: { fileSize: 3 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req: any, file: any, cb: any) => {
     if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|svg\+xml)$/)) {
       return cb(new BadRequestException('Hanya file gambar yang diperbolehkan'), false);
@@ -36,24 +37,49 @@ export class PengaturanSekolahController {
   }
 
   @Put()
-  @UseInterceptors(FileInterceptor('logo', multerOptions))
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'logo', maxCount: 1 },
+    { name: 'hero_images', maxCount: 10 },
+    { name: 'login_bg', maxCount: 1 },
+  ], multerOptions))
   update(
     @Body() dto: UpdatePengaturanSekolahDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles() files?: {
+      logo?: Express.Multer.File[];
+      hero_images?: Express.Multer.File[];
+      login_bg?: Express.Multer.File[];
+    },
   ) {
-    const logoUrl = file
-      ? normalizePath(file.path).replace(/^uploads[/\\]/, '')
+    const logoUrl = files?.logo?.[0]
+      ? normalizePath(files.logo[0].path).replace(/^uploads[/\\]/, '')
       : undefined;
-    return this.service.update(dto, logoUrl);
+
+    const heroImagePaths = files?.hero_images?.map(f =>
+      normalizePath(f.path).replace(/^uploads[/\\]/, ''),
+    );
+
+    const loginBgUrl = files?.login_bg?.[0]
+      ? normalizePath(files.login_bg[0].path).replace(/^uploads[/\\]/, '')
+      : undefined;
+
+    return this.service.update(dto, logoUrl, heroImagePaths, loginBgUrl);
   }
 
   // alias agar klien yang hanya bisa POST tetap dapat menyimpan
   @Post()
-  @UseInterceptors(FileInterceptor('logo', multerOptions))
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'logo', maxCount: 1 },
+    { name: 'hero_images', maxCount: 10 },
+    { name: 'login_bg', maxCount: 1 },
+  ], multerOptions))
   save(
     @Body() dto: UpdatePengaturanSekolahDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles() files?: {
+      logo?: Express.Multer.File[];
+      hero_images?: Express.Multer.File[];
+      login_bg?: Express.Multer.File[];
+    },
   ) {
-    return this.update(dto, file);
+    return this.update(dto, files);
   }
 }

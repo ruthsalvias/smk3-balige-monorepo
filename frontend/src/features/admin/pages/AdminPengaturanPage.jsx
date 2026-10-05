@@ -38,6 +38,16 @@ export default function AdminPengaturanPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Hero images state
+  const [heroExisting, setHeroExisting] = useState([]);
+  const [heroNewFiles, setHeroNewFiles] = useState([]);
+  const [heroNewPreviews, setHeroNewPreviews] = useState([]);
+
+  // Login bg state
+  const [loginBgFile, setLoginBgFile] = useState(null);
+  const [loginBgPreview, setLoginBgPreview] = useState(null);
+  const [loginBgRemoved, setLoginBgRemoved] = useState(false);
+
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -57,15 +67,16 @@ export default function AdminPengaturanPage() {
         });
         setSosial(Array.isArray(data.sosial_media) ? data.sosial_media : []);
         setLogoPreview(mediaUrl(data.logo_url));
+        setHeroExisting(Array.isArray(data.hero_images) ? data.hero_images : []);
+        setLoginBgPreview(data.login_bg_url ? mediaUrl(data.login_bg_url) : null);
+        setLoginBgRemoved(false);
       } catch (err) {
         showErrorDialog(err.message);
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   const onChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -81,20 +92,57 @@ export default function AdminPengaturanPage() {
     setSosial((prev) => prev.map((it, i) => (i === index ? { ...it, [key]: value } : it)));
   const removeSosial = (index) => setSosial((prev) => prev.filter((_, i) => i !== index));
 
+  // Hero image handlers
+  const addHeroFiles = (files) => {
+    const arr = Array.from(files);
+    setHeroNewFiles((p) => [...p, ...arr]);
+    setHeroNewPreviews((p) => [...p, ...arr.map((f) => URL.createObjectURL(f))]);
+  };
+  const removeExistingHero = (index) => setHeroExisting((p) => p.filter((_, i) => i !== index));
+  const removeNewHero = (index) => {
+    setHeroNewFiles((p) => p.filter((_, i) => i !== index));
+    setHeroNewPreviews((p) => { URL.revokeObjectURL(p[index]); return p.filter((_, i) => i !== index); });
+  };
+
+  // Login bg handler
+  const onLoginBg = (file) => {
+    if (!file) return;
+    setLoginBgFile(file);
+    setLoginBgPreview(URL.createObjectURL(file));
+    setLoginBgRemoved(false);
+  };
+  const onRemoveLoginBg = () => {
+    setLoginBgFile(null);
+    setLoginBgPreview(null);
+    setLoginBgRemoved(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.nama_sekolah.trim()) {
-      showErrorDialog("Nama sekolah wajib diisi");
-      return;
-    }
+    if (!form.nama_sekolah.trim()) { showErrorDialog("Nama sekolah wajib diisi"); return; }
     setSaving(true);
     try {
-      const cleanSosial = sosial
-        .filter((s) => s.platform && s.url.trim())
-        .map((s) => ({ platform: s.platform, url: s.url.trim() }));
-      await putPengaturan({ ...form, sosial_media: cleanSosial }, logoFile);
+      const cleanSosial = sosial.filter((s) => s.platform && s.url.trim()).map((s) => ({ platform: s.platform, url: s.url.trim() }));
+      await putPengaturan(
+        {
+          ...form,
+          sosial_media: cleanSosial,
+          hero_images: heroExisting,
+          ...(loginBgRemoved ? { login_bg_url: "" } : {}),
+        },
+        logoFile,
+        heroNewFiles.length > 0 ? heroNewFiles : null,
+        loginBgFile
+      );
       setLogoFile(null);
+      setHeroNewFiles([]);
+      setHeroNewPreviews([]);
+      setLoginBgFile(null);
+      setLoginBgRemoved(false);
       await refresh();
+      const data = await getPengaturan();
+      setHeroExisting(Array.isArray(data.hero_images) ? data.hero_images : []);
+      setLoginBgPreview(data.login_bg_url ? mediaUrl(data.login_bg_url) : null);
       showSuccessDialog("Pengaturan sekolah berhasil disimpan");
     } catch (err) {
       showErrorDialog(err.message);
@@ -106,7 +154,7 @@ export default function AdminPengaturanPage() {
   return (
     <AdminLayout
       title="Pengaturan Sekolah"
-      subtitle="Identitas, kontak, jam operasional, dan media sosial yang tampil di seluruh website."
+      subtitle="Identitas, kontak, jam operasional, dan tampilan website."
     >
       {loading ? (
         <div className="smk-admin-card">
@@ -120,9 +168,7 @@ export default function AdminPengaturanPage() {
           <section className="smk-admin-card">
             <div className="smk-admin-card-header">
               <div>
-                <div className="smk-admin-card-title">
-                  <Icon name="shield" size={18} /> Identitas Sekolah
-                </div>
+                <div className="smk-admin-card-title"><Icon name="shield" size={18} /> Identitas Sekolah</div>
                 <div className="smk-admin-card-sub">Nama, tagline, dan logo resmi.</div>
               </div>
             </div>
@@ -130,75 +176,36 @@ export default function AdminPengaturanPage() {
               <div className="smk-form-row">
                 <div className="smk-form-group">
                   <label htmlFor="nama_sekolah">Nama Sekolah</label>
-                  <input
-                    id="nama_sekolah"
-                    value={form.nama_sekolah}
-                    onChange={onChange("nama_sekolah")}
-                    placeholder="SMK NEGERI 3 BALIGE"
-                  />
+                  <input id="nama_sekolah" value={form.nama_sekolah} onChange={onChange("nama_sekolah")} placeholder="SMK NEGERI 3 BALIGE" />
                 </div>
                 <div className="smk-form-group">
                   <label htmlFor="nama_singkat">Nama Singkat</label>
-                  <input
-                    id="nama_singkat"
-                    value={form.nama_singkat}
-                    onChange={onChange("nama_singkat")}
-                    placeholder="SMKN 3 Balige"
-                  />
+                  <input id="nama_singkat" value={form.nama_singkat} onChange={onChange("nama_singkat")} placeholder="SMKN 3 Balige" />
                 </div>
               </div>
-
               <div className="smk-form-row">
                 <div className="smk-form-group">
                   <label htmlFor="tagline">Tagline</label>
-                  <input
-                    id="tagline"
-                    value={form.tagline}
-                    onChange={onChange("tagline")}
-                    placeholder="Excellence in Education"
-                  />
+                  <input id="tagline" value={form.tagline} onChange={onChange("tagline")} placeholder="Excellence in Education" />
                 </div>
                 <div className="smk-form-group">
                   <label htmlFor="tahun_ajaran">Tahun Ajaran</label>
-                  <input
-                    id="tahun_ajaran"
-                    value={form.tahun_ajaran}
-                    onChange={onChange("tahun_ajaran")}
-                    placeholder="2025/2026"
-                  />
+                  <input id="tahun_ajaran" value={form.tahun_ajaran} onChange={onChange("tahun_ajaran")} placeholder="2025/2026" />
                 </div>
               </div>
-
               <div className="smk-form-group">
                 <label htmlFor="deskripsi_singkat">Deskripsi Singkat</label>
-                <textarea
-                  id="deskripsi_singkat"
-                  rows={3}
-                  value={form.deskripsi_singkat}
-                  onChange={onChange("deskripsi_singkat")}
-                  placeholder="Kalimat singkat tentang sekolah, tampil di footer dan beranda."
-                />
+                <textarea id="deskripsi_singkat" rows={3} value={form.deskripsi_singkat} onChange={onChange("deskripsi_singkat")} placeholder="Kalimat singkat tentang sekolah." />
               </div>
-
               <div className="smk-form-group">
                 <label>Logo Sekolah</label>
                 <div className="smk-logo-picker">
                   <div className="smk-logo-preview">
-                    {logoPreview ? (
-                      <img src={logoPreview} alt="Logo sekolah" />
-                    ) : (
-                      <Icon name="image" size={26} />
-                    )}
+                    {logoPreview ? <img src={logoPreview} alt="Logo sekolah" /> : <Icon name="image" size={26} />}
                   </div>
                   <label htmlFor="logo-input" className="smk-btn-outline">
                     <Icon name="upload" size={16} /> Pilih Logo
-                    <input
-                      id="logo-input"
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={(e) => onLogo(e.target.files?.[0])}
-                    />
+                    <input id="logo-input" type="file" accept="image/*" hidden onChange={(e) => onLogo(e.target.files?.[0])} />
                   </label>
                 </div>
                 <small className="smk-form-hint">PNG / JPG / WEBP, maksimal 5MB.</small>
@@ -210,57 +217,103 @@ export default function AdminPengaturanPage() {
           <section className="smk-admin-card">
             <div className="smk-admin-card-header">
               <div>
-                <div className="smk-admin-card-title">
-                  <Icon name="mapPin" size={18} /> Kontak & Jam Operasional
-                </div>
-                <div className="smk-admin-card-sub">
-                  Tulis satu item per baris untuk telepon, email, dan jam operasional.
-                </div>
+                <div className="smk-admin-card-title"><Icon name="mapPin" size={18} /> Kontak & Jam Operasional</div>
+                <div className="smk-admin-card-sub">Tulis satu item per baris untuk telepon, email, dan jam operasional.</div>
               </div>
             </div>
             <div className="smk-admin-card-body">
               <div className="smk-form-group">
                 <label htmlFor="alamat">Alamat</label>
-                <textarea
-                  id="alamat"
-                  rows={2}
-                  value={form.alamat}
-                  onChange={onChange("alamat")}
-                  placeholder="Jl. Pendidikan No. 123, Balige"
-                />
+                <textarea id="alamat" rows={2} value={form.alamat} onChange={onChange("alamat")} placeholder="Jl. Pendidikan No. 123, Balige" />
               </div>
-              <div className="smk-form-row">
-                <div className="smk-form-group">
-                  <label htmlFor="telepon">Telepon</label>
-                  <textarea
-                    id="telepon"
-                    rows={3}
-                    value={form.telepon}
-                    onChange={onChange("telepon")}
-                    placeholder={"(021) 1234-5678\n+62 812-3456-7890"}
-                  />
-                </div>
-                <div className="smk-form-group">
-                  <label htmlFor="email">Email</label>
-                  <textarea
-                    id="email"
-                    rows={3}
-                    value={form.email}
-                    onChange={onChange("email")}
-                    placeholder={"info@sekolah.sch.id\nadmin@sekolah.sch.id"}
-                  />
-                </div>
+              <div className="smk-form-group">
+                <label htmlFor="telepon">Telepon</label>
+                <textarea id="telepon" rows={2} value={form.telepon} onChange={onChange("telepon")} placeholder={"(021) 1234-5678\n+62 812-3456-7890"} />
+              </div>
+              <div className="smk-form-group">
+                <label htmlFor="email">Email</label>
+                <textarea id="email" rows={2} value={form.email} onChange={onChange("email")} placeholder={"info@sekolah.sch.id\nadmin@sekolah.sch.id"} />
               </div>
               <div className="smk-form-group">
                 <label htmlFor="jam_operasional">Jam Operasional</label>
-                <textarea
-                  id="jam_operasional"
-                  rows={3}
-                  value={form.jam_operasional}
-                  onChange={onChange("jam_operasional")}
-                  placeholder={"Senin - Jumat: 07:00 - 15:00\nSabtu: 07:00 - 12:00"}
-                />
+                <textarea id="jam_operasional" rows={2} value={form.jam_operasional} onChange={onChange("jam_operasional")} placeholder={"Senin - Jumat: 07:00 - 15:00\nSabtu: 07:00 - 12:00"} />
               </div>
+            </div>
+          </section>
+
+          {/* ── HERO SLIDER ─────────────────────────────── */}
+          <section className="smk-admin-card smk-settings-full">
+            <div className="smk-admin-card-header">
+              <div>
+                <div className="smk-admin-card-title"><Icon name="image" size={18} /> Gambar Hero (Slider Beranda)</div>
+                <div className="smk-admin-card-sub">Upload beberapa foto untuk slider beranda. Pengunjung bisa geser dan klik.</div>
+              </div>
+              <label htmlFor="hero-input" className="smk-btn-primary smk-admin-btn-sm" style={{ cursor: "pointer" }}>
+                <Icon name="plus" size={15} /> Tambah Foto
+                <input id="hero-input" type="file" accept="image/*" multiple hidden onChange={(e) => { addHeroFiles(e.target.files); e.target.value = ""; }} />
+              </label>
+            </div>
+            <div className="smk-admin-card-body">
+              {heroExisting.length === 0 && heroNewPreviews.length === 0 ? (
+                <p className="smk-admin-empty-inline">Belum ada gambar hero. Gambar bawaan akan digunakan.</p>
+              ) : (
+                <div className="smk-hero-admin-grid">
+                  {heroExisting.map((path, i) => (
+                    <div key={`ex-${i}`} className="smk-hero-admin-item">
+                      <img src={mediaUrl(path)} alt={`Hero ${i + 1}`} />
+                      <button type="button" className="smk-hero-admin-remove" onClick={() => removeExistingHero(i)} aria-label="Hapus">
+                        <Icon name="x" size={14} />
+                      </button>
+                      <span className="smk-hero-admin-badge">{i + 1}</span>
+                    </div>
+                  ))}
+                  {heroNewPreviews.map((url, i) => (
+                    <div key={`new-${i}`} className="smk-hero-admin-item smk-hero-admin-new">
+                      <img src={url} alt={`Baru ${i + 1}`} />
+                      <button type="button" className="smk-hero-admin-remove" onClick={() => removeNewHero(i)} aria-label="Hapus">
+                        <Icon name="x" size={14} />
+                      </button>
+                      <span className="smk-hero-admin-badge" style={{ background: "#d97706" }}>Baru</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ── LOGIN BACKGROUND ─────────────────────────── */}
+          <section className="smk-admin-card smk-settings-full">
+            <div className="smk-admin-card-header">
+              <div>
+                <div className="smk-admin-card-title"><Icon name="image" size={18} /> Background Halaman Login</div>
+                <div className="smk-admin-card-sub">Foto ini ditampilkan sebagai latar belakang login dengan efek blur/samar.</div>
+              </div>
+            </div>
+            <div className="smk-admin-card-body">
+              <div className="smk-loginbg-picker">
+                <div className="smk-loginbg-preview">
+                  {loginBgPreview ? (
+                    <img src={loginBgPreview} alt="Background login" />
+                  ) : (
+                    <div className="smk-loginbg-empty">
+                      <Icon name="image" size={32} />
+                      <span>Belum ada background. Warna solid bawaan akan digunakan.</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                  <label htmlFor="loginbg-input" className="smk-btn-outline" style={{ cursor: "pointer" }}>
+                    <Icon name="upload" size={16} /> {loginBgPreview ? "Ganti Background" : "Upload Background"}
+                    <input id="loginbg-input" type="file" accept="image/*" hidden onChange={(e) => { onLoginBg(e.target.files?.[0]); e.target.value = ""; }} />
+                  </label>
+                  {loginBgPreview && (
+                    <button type="button" className="smk-btn-outline" style={{ color: "#ef4444", borderColor: "#fca5a5" }} onClick={onRemoveLoginBg}>
+                      <Icon name="trash" size={16} /> Hapus Background
+                    </button>
+                  )}
+                </div>
+              </div>
+              <small className="smk-form-hint">Foto akan ditampilkan dengan efek blur dan overlay gelap.</small>
             </div>
           </section>
 
@@ -268,9 +321,7 @@ export default function AdminPengaturanPage() {
           <section className="smk-admin-card smk-settings-full">
             <div className="smk-admin-card-header">
               <div>
-                <div className="smk-admin-card-title">
-                  <Icon name="globe" size={18} /> Media Sosial
-                </div>
+                <div className="smk-admin-card-title"><Icon name="globe" size={18} /> Media Sosial</div>
                 <div className="smk-admin-card-sub">Tautan yang muncul di footer website.</div>
               </div>
               <button type="button" className="smk-btn-primary smk-admin-btn-sm" onClick={addSosial}>
@@ -284,33 +335,12 @@ export default function AdminPengaturanPage() {
                 <div className="smk-repeater">
                   {sosial.map((item, index) => (
                     <div className="smk-repeater-row" key={index}>
-                      <span className="smk-repeater-icon">
-                        <Icon name={item.platform || "globe"} size={18} />
-                      </span>
-                      <select
-                        value={item.platform}
-                        onChange={(e) => updateSosial(index, "platform", e.target.value)}
-                        aria-label="Platform"
-                      >
-                        {PLATFORMS.map((p) => (
-                          <option key={p.value} value={p.value}>
-                            {p.label}
-                          </option>
-                        ))}
+                      <span className="smk-repeater-icon"><Icon name={item.platform || "globe"} size={18} /></span>
+                      <select value={item.platform} onChange={(e) => updateSosial(index, "platform", e.target.value)} aria-label="Platform">
+                        {PLATFORMS.map((p) => (<option key={p.value} value={p.value}>{p.label}</option>))}
                       </select>
-                      <input
-                        type="url"
-                        value={item.url}
-                        onChange={(e) => updateSosial(index, "url", e.target.value)}
-                        placeholder="https://..."
-                        aria-label="URL"
-                      />
-                      <button
-                        type="button"
-                        className="smk-admin-btn-delete"
-                        onClick={() => removeSosial(index)}
-                        aria-label="Hapus"
-                      >
+                      <input type="url" value={item.url} onChange={(e) => updateSosial(index, "url", e.target.value)} placeholder="https://..." aria-label="URL" />
+                      <button type="button" className="smk-admin-btn-delete" onClick={() => removeSosial(index)} aria-label="Hapus">
                         <Icon name="trash" size={15} />
                       </button>
                     </div>
@@ -322,15 +352,7 @@ export default function AdminPengaturanPage() {
 
           <div className="smk-settings-actions smk-settings-full">
             <button type="submit" className="smk-btn-primary" disabled={saving}>
-              {saving ? (
-                <>
-                  <span className="smk-admin-spinner smk-admin-spinner-sm" /> Menyimpan...
-                </>
-              ) : (
-                <>
-                  <Icon name="shield" size={16} /> Simpan Pengaturan
-                </>
-              )}
+              {saving ? (<><span className="smk-admin-spinner smk-admin-spinner-sm" /> Menyimpan...</>) : (<><Icon name="shield" size={16} /> Simpan Pengaturan</>)}
             </button>
           </div>
         </form>

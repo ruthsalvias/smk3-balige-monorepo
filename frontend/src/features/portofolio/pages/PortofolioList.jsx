@@ -252,12 +252,14 @@ function PortofolioList() {
                       onClick={() => navigate(`/portofolio/${p.id}`)}>
                       {p.studentName}
                     </div>
-                    {isOwner(p) && (
+                    <div>
                       <span style={{
-                        fontSize: '10px', color: '#1f2c5c', backgroundColor: '#e0e7ff',
-                        padding: '1px 6px', borderRadius: '10px', fontWeight: '600',
-                      }}>Karya kamu</span>
-                    )}
+                        backgroundColor: '#e0e7ff', color: '#3730a3',
+                        padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '500',
+                      }}>
+                        {p.major || '-'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

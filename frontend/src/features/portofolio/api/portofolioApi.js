@@ -23,7 +23,7 @@ const buildUserHeaders = () => {
 
   // 2. Custom headers untuk dibaca oleh service-portofolio NestJS
   if (userId) headers['X-User-Id'] = userId;
-  if (username) headers['X-User-Name'] = username;
+  if (username) headers['X-User-Name'] = localStorage.getItem('userNama') || username;
   if (roles) headers['X-User-Roles'] = roles;
 
   return headers;
@@ -153,8 +153,12 @@ const GATEWAY_BASE_URL = GATEWAY_URL;
 export function getPortofolioImageUrl(imagePath) {
   if (!imagePath) return null;
   if (imagePath.startsWith('data:')) return imagePath;
-  // Sebagian data lama menyimpan URL penuh ke /uploads/ yang kini dipakai service berita.
-  const nama = imagePath.replace(/^https?:\/\/[^/]+/, '').replace(/^\/?(uploads\/)?(portofolio\/)?/, '');
+  // Bersihkan URL penuh (data lama) dan prefix "uploads/" yang redundan,
+  // tetapi kembalikan selalu subfolder "portofolio/" ke posisinya supaya path
+  // mengarah ke file asli di service-portofolio (uploads/portofolio/...).
+  let nama = imagePath.replace(/^https?:\/\/[^/]+/, '').replace(/^\/+/, '');
+  nama = nama.replace(/^uploads\/?/, '').replace(/^portofolio\//, '');
+  nama = `portofolio/${nama}`;
   return `${GATEWAY_BASE_URL}/api/portofolio/uploads/${nama}`;
 }
 
