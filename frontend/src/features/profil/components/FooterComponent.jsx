@@ -147,8 +147,14 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="smk-footer-bottom">
-          <p>
-            © {new Date().getFullYear()} {pengaturan.nama_sekolah}. Seluruh hak cipta dilindungi.
+          <p className="smk-footer-bottom-title">
+            Sistem Informasi {pengaturan.nama_sekolah || "SMK Negeri 3 Balige"}
+          </p>
+          <p className="smk-footer-bottom-dev">
+            Dikembangkan oleh Program Studi S1 Informatika, Institut Teknologi Del
+          </p>
+          <p className="smk-footer-bottom-copy">
+            © {new Date().getFullYear()}. Hak Cipta Dilindungi.
           </p>
         </div>
       </div>

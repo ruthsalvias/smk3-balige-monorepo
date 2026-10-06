@@ -769,11 +769,30 @@ img {
 
 .smk-footer-bottom {
   text-align: center;
-  padding: 20px 0;
+  padding: 24px 16px 20px;
   margin-top: 40px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 13px;
-  opacity: 0.6;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  line-height: 1.6;
+}
+
+.smk-footer-bottom-title {
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+}
+
+.smk-footer-bottom-dev {
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 5px;
+  font-size: 12.5px;
+}
+
+.smk-footer-bottom-copy {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-size: 12px;
 }
 
 /* ════════════════════════════════════════════════
