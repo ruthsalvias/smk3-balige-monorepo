@@ -4,7 +4,7 @@ import Icon from "../../../components/Icon";
 import { mediaUrl } from "../components/AdminComponents";
 import { getPengaturan, putPengaturan } from "../../profil/api/pengaturanApi";
 import { useSiteSettings } from "../../profil/context/SiteSettingsContext";
-import { showErrorDialog, showSuccessDialog } from "../../../helpers/toolsHelper";
+import { showConfirmDialog, showErrorDialog, showSuccessDialog } from "../../../helpers/toolsHelper";
 
 const PLATFORMS = [
   { value: "facebook", label: "Facebook" },
@@ -98,23 +98,148 @@ export default function AdminPengaturanPage() {
     setHeroNewFiles((p) => [...p, ...arr]);
     setHeroNewPreviews((p) => [...p, ...arr.map((f) => URL.createObjectURL(f))]);
   };
-  const removeExistingHero = (index) => setHeroExisting((p) => p.filter((_, i) => i !== index));
-  const removeNewHero = (index) => {
-    setHeroNewFiles((p) => p.filter((_, i) => i !== index));
-    setHeroNewPreviews((p) => { URL.revokeObjectURL(p[index]); return p.filter((_, i) => i !== index); });
+
+  const removeExistingHero = async (index) => {
+    const r = await showConfirmDialog(`Hapus foto slider ke-${index + 1} ini?`);
+    if (!r.isConfirmed) return;
+
+    const nextHero = heroExisting.filter((_, i) => i !== index);
+    setHeroExisting(nextHero);
+
+    try {
+      setSaving(true);
+      const cleanSosial = sosial.filter((s) => s.platform && s.url?.trim()).map((s) => ({ platform: s.platform, url: s.url.trim() }));
+      await putPengaturan(
+        {
+          ...form,
+          sosial_media: cleanSosial,
+          hero_images: nextHero,
+        },
+        null,
+        null,
+        null
+      );
+      await refresh();
+      showSuccessDialog("Foto slider berhasil dihapus");
+    } catch (err) {
+      showErrorDialog("Gagal menghapus foto slider: " + err.message);
+      setHeroExisting(heroExisting);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Login bg handler
+  const removeNewHero = (index) => {
+    setHeroNewFiles((p) => p.filter((_, i) => i !== index));
+    setHeroNewPreviews((p) => {
+      URL.revokeObjectURL(p[index]);
+      return p.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleSaveNewHero = async () => {
+    if (heroNewFiles.length === 0) return;
+    setSaving(true);
+    try {
+      const cleanSosial = sosial.filter((s) => s.platform && s.url?.trim()).map((s) => ({ platform: s.platform, url: s.url.trim() }));
+      await putPengaturan(
+        {
+          ...form,
+          sosial_media: cleanSosial,
+          hero_images: heroExisting,
+        },
+        null,
+        heroNewFiles,
+        null
+      );
+      setHeroNewFiles([]);
+      setHeroNewPreviews([]);
+      await refresh();
+      const data = await getPengaturan();
+      setHeroExisting(Array.isArray(data.hero_images) ? data.hero_images : []);
+      showSuccessDialog("Foto slider baru berhasil disimpan");
+    } catch (err) {
+      showErrorDialog("Gagal mengunggah foto slider: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Login bg handlers
   const onLoginBg = (file) => {
     if (!file) return;
     setLoginBgFile(file);
     setLoginBgPreview(URL.createObjectURL(file));
     setLoginBgRemoved(false);
   };
-  const onRemoveLoginBg = () => {
-    setLoginBgFile(null);
-    setLoginBgPreview(null);
-    setLoginBgRemoved(true);
+
+  const onRemoveLoginBg = async () => {
+    if (loginBgFile) {
+      setLoginBgFile(null);
+      try {
+        const data = await getPengaturan();
+        setLoginBgPreview(data.login_bg_url ? mediaUrl(data.login_bg_url) : null);
+      } catch {
+        setLoginBgPreview(null);
+      }
+      setLoginBgRemoved(false);
+      return;
+    }
+
+    const r = await showConfirmDialog("Hapus background halaman login? Halaman login akan menggunakan latar warna bawaan.");
+    if (!r.isConfirmed) return;
+
+    try {
+      setSaving(true);
+      const cleanSosial = sosial.filter((s) => s.platform && s.url?.trim()).map((s) => ({ platform: s.platform, url: s.url.trim() }));
+      await putPengaturan(
+        {
+          ...form,
+          sosial_media: cleanSosial,
+          hero_images: heroExisting,
+          login_bg_url: "",
+        },
+        null,
+        null,
+        null
+      );
+      setLoginBgFile(null);
+      setLoginBgPreview(null);
+      setLoginBgRemoved(false);
+      await refresh();
+      showSuccessDialog("Background halaman login berhasil dihapus");
+    } catch (err) {
+      showErrorDialog("Gagal menghapus background: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveNewLoginBg = async () => {
+    if (!loginBgFile) return;
+    setSaving(true);
+    try {
+      const cleanSosial = sosial.filter((s) => s.platform && s.url?.trim()).map((s) => ({ platform: s.platform, url: s.url.trim() }));
+      await putPengaturan(
+        {
+          ...form,
+          sosial_media: cleanSosial,
+          hero_images: heroExisting,
+        },
+        null,
+        null,
+        loginBgFile
+      );
+      setLoginBgFile(null);
+      await refresh();
+      const data = await getPengaturan();
+      setLoginBgPreview(data.login_bg_url ? mediaUrl(data.login_bg_url) : null);
+      showSuccessDialog("Background halaman login berhasil diperbarui");
+    } catch (err) {
+      showErrorDialog("Gagal menyimpan background: " + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -248,10 +373,23 @@ export default function AdminPengaturanPage() {
                 <div className="smk-admin-card-title"><Icon name="image" size={18} /> Gambar Hero (Slider Beranda)</div>
                 <div className="smk-admin-card-sub">Upload beberapa foto untuk slider beranda. Pengunjung bisa geser dan klik.</div>
               </div>
-              <label htmlFor="hero-input" className="smk-btn-primary smk-admin-btn-sm" style={{ cursor: "pointer" }}>
-                <Icon name="plus" size={15} /> Tambah Foto
-                <input id="hero-input" type="file" accept="image/*" multiple hidden onChange={(e) => { addHeroFiles(e.target.files); e.target.value = ""; }} />
-              </label>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                {heroNewFiles.length > 0 && (
+                  <button
+                    type="button"
+                    className="smk-btn-primary smk-admin-btn-sm"
+                    style={{ background: "#16a34a" }}
+                    onClick={handleSaveNewHero}
+                    disabled={saving}
+                  >
+                    <Icon name="upload" size={15} /> Simpan {heroNewFiles.length} Foto Baru
+                  </button>
+                )}
+                <label htmlFor="hero-input" className="smk-btn-primary smk-admin-btn-sm" style={{ cursor: "pointer" }}>
+                  <Icon name="plus" size={15} /> Tambah Foto
+                  <input id="hero-input" type="file" accept="image/*" multiple hidden onChange={(e) => { addHeroFiles(e.target.files); e.target.value = ""; }} />
+                </label>
+              </div>
             </div>
             <div className="smk-admin-card-body">
               {heroExisting.length === 0 && heroNewPreviews.length === 0 ? (
@@ -260,20 +398,41 @@ export default function AdminPengaturanPage() {
                 <div className="smk-hero-admin-grid">
                   {heroExisting.map((path, i) => (
                     <div key={`ex-${i}`} className="smk-hero-admin-item">
-                      <img src={mediaUrl(path)} alt={`Hero ${i + 1}`} />
-                      <button type="button" className="smk-hero-admin-remove" onClick={() => removeExistingHero(i)} aria-label="Hapus">
-                        <Icon name="x" size={14} />
-                      </button>
-                      <span className="smk-hero-admin-badge">{i + 1}</span>
+                      <div className="smk-hero-admin-thumb">
+                        <img src={mediaUrl(path)} alt={`Hero ${i + 1}`} />
+                        <span className="smk-hero-admin-badge">{i + 1}</span>
+                      </div>
+                      <div className="smk-hero-admin-footer">
+                        <span className="smk-hero-admin-name">Foto #{i + 1}</span>
+                        <button
+                          type="button"
+                          className="smk-hero-btn-delete"
+                          onClick={() => removeExistingHero(i)}
+                          title="Hapus foto ini"
+                          disabled={saving}
+                        >
+                          <Icon name="trash" size={13} /> Hapus
+                        </button>
+                      </div>
                     </div>
                   ))}
                   {heroNewPreviews.map((url, i) => (
                     <div key={`new-${i}`} className="smk-hero-admin-item smk-hero-admin-new">
-                      <img src={url} alt={`Baru ${i + 1}`} />
-                      <button type="button" className="smk-hero-admin-remove" onClick={() => removeNewHero(i)} aria-label="Hapus">
-                        <Icon name="x" size={14} />
-                      </button>
-                      <span className="smk-hero-admin-badge" style={{ background: "#d97706" }}>Baru</span>
+                      <div className="smk-hero-admin-thumb">
+                        <img src={url} alt={`Baru ${i + 1}`} />
+                        <span className="smk-hero-admin-badge" style={{ background: "#d97706" }}>Baru</span>
+                      </div>
+                      <div className="smk-hero-admin-footer">
+                        <span className="smk-hero-admin-name" style={{ color: "#d97706", fontWeight: 600 }}>Belum disimpan</span>
+                        <button
+                          type="button"
+                          className="smk-hero-btn-delete"
+                          onClick={() => removeNewHero(i)}
+                          title="Batal upload"
+                        >
+                          <Icon name="x" size={13} /> Batal
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -306,9 +465,26 @@ export default function AdminPengaturanPage() {
                     <Icon name="upload" size={16} /> {loginBgPreview ? "Ganti Background" : "Upload Background"}
                     <input id="loginbg-input" type="file" accept="image/*" hidden onChange={(e) => { onLoginBg(e.target.files?.[0]); e.target.value = ""; }} />
                   </label>
+                  {loginBgFile && (
+                    <button
+                      type="button"
+                      className="smk-btn-primary smk-admin-btn-sm"
+                      style={{ background: "#16a34a" }}
+                      onClick={handleSaveNewLoginBg}
+                      disabled={saving}
+                    >
+                      <Icon name="upload" size={15} /> Simpan Background Baru
+                    </button>
+                  )}
                   {loginBgPreview && (
-                    <button type="button" className="smk-btn-outline" style={{ color: "#ef4444", borderColor: "#fca5a5" }} onClick={onRemoveLoginBg}>
-                      <Icon name="trash" size={16} /> Hapus Background
+                    <button
+                      type="button"
+                      className="smk-btn-outline"
+                      style={{ color: "#ef4444", borderColor: "#fca5a5" }}
+                      onClick={onRemoveLoginBg}
+                      disabled={saving}
+                    >
+                      <Icon name="trash" size={16} /> {loginBgFile ? "Batal Pilihan" : "Hapus Background"}
                     </button>
                   )}
                 </div>

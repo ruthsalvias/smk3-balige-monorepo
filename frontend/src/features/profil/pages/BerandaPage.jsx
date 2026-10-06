@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import ProfilLayout from "../layouts/ProfilLayout";
-import foto from "../../../assets/images/foto.png";
 import { beritaMediaUrl, mediaUrl } from "../../admin/components/AdminComponents";
 import { asyncGetPrestasi, asyncGetProgramKeahlian, asyncGetMitraKerjasama } from "../states/action";
 import { asyncLoadAllBeritaData } from "../../berita/states/action";
 import { useSiteSettings } from "../context/SiteSettingsContext";
+import { useHeroSlider } from "../hooks/useHeroSlider";
 import Icon from "../../../components/Icon";
 import Reveal from "../../../components/Reveal";
 
@@ -32,28 +32,6 @@ const ringkas = (text, max = 150) => {
   return bersih.length > max ? `${bersih.slice(0, max)}...` : bersih;
 };
 
-/* ── Hero Carousel Hook ─────────────────────────────────── */
-function useHeroSlider(images, interval = 5000) {
-  const [current, setCurrent] = useState(0);
-  const timerRef = useRef(null);
-  const len = images.length;
-
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (len > 1) {
-      timerRef.current = setInterval(() => setCurrent((p) => (p + 1) % len), interval);
-    }
-  }, [len, interval]);
-
-  useEffect(() => { resetTimer(); return () => clearInterval(timerRef.current); }, [resetTimer]);
-
-  const next = useCallback(() => { setCurrent((p) => (p + 1) % len); resetTimer(); }, [len, resetTimer]);
-  const prev = useCallback(() => { setCurrent((p) => (p - 1 + len) % len); resetTimer(); }, [len, resetTimer]);
-  const goTo = useCallback((i) => { setCurrent(i); resetTimer(); }, [resetTimer]);
-
-  return { current, next, prev, goTo };
-}
-
 export default function BerandaPage() {
   const dispatch = useDispatch();
   const { pengaturan, statistik } = useSiteSettings();
@@ -62,11 +40,10 @@ export default function BerandaPage() {
   const agenda = useSelector((s) => s.agenda || []);
   const pengumuman = useSelector((s) => s.pengumuman || []);
 
-  // Build hero images array: use DB images if available, fallback to static
+  // Build hero images array: use DB images dynamically
   const heroImages = useMemo(() => {
-    const dbImages = (pengaturan.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
-    return dbImages.length > 0 ? dbImages : [foto];
-  }, [pengaturan.hero_images]);
+    return (pengaturan?.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+  }, [pengaturan?.hero_images]);
 
   const { current, next, prev, goTo } = useHeroSlider(heroImages);
 
@@ -128,21 +105,23 @@ export default function BerandaPage() {
       {/* HERO */}
       <section className="smk-beranda-hero">
         {/* Blurred background layer */}
-        <div
-          className="smk-beranda-hero-bg"
-          style={{ backgroundImage: `url(${heroImages[current]})` }}
-        />
+        {heroImages.length > 0 && (
+          <div
+            className="smk-beranda-hero-bg"
+            style={{ backgroundImage: `url(${heroImages[current] || heroImages[0]})` }}
+          />
+        )}
         <div className="smk-beranda-hero-inner">
           <div className="smk-beranda-hero-text">
             <span className="smk-badge">
-              Tahun Ajaran {pengaturan.tahun_ajaran || "—"}
+              Tahun Ajaran {pengaturan?.tahun_ajaran || "—"}
             </span>
             <h1>
               WEBSITE RESMI<br />
-              <span className="smk-hero-highlight">{pengaturan.nama_sekolah}</span>
+              <span className="smk-hero-highlight">{pengaturan?.nama_sekolah || "SMK Negeri 3 Balige"}</span>
             </h1>
             <p>
-              {pengaturan.deskripsi_singkat ||
+              {pengaturan?.deskripsi_singkat ||
                 "Mencetak lulusan yang kompeten, berkarakter, dan siap bersaing di dunia industri melalui pembelajaran berbasis praktik."}
             </p>
             <div className="smk-beranda-cta">
@@ -150,19 +129,20 @@ export default function BerandaPage() {
               <NavLink to="/portofolio" className="smk-btn-secondary">Lihat Portofolio</NavLink>
             </div>
           </div>
-          <div className="smk-beranda-hero-img">
-            {/* Carousel Slider */}
-            <div className="smk-hero-carousel">
-              <div
-                className="smk-hero-carousel-track"
-                style={{ transform: `translateX(-${current * 100}%)` }}
-              >
-                {heroImages.map((src, i) => (
-                  <div className="smk-hero-carousel-slide" key={i}>
-                    <img src={src} alt={`${pengaturan.nama_sekolah} ${i + 1}`} />
-                  </div>
-                ))}
-              </div>
+          {heroImages.length > 0 && (
+            <div className="smk-beranda-hero-img">
+              {/* Carousel Slider */}
+              <div className="smk-hero-carousel">
+                <div className="smk-hero-carousel-slides">
+                  {heroImages.map((src, i) => (
+                    <div
+                      className={`smk-hero-carousel-slide${i === current ? " active" : ""}`}
+                      key={i}
+                    >
+                      <img src={src} alt={`${pengaturan?.nama_sekolah || "SMK"} ${i + 1}`} />
+                    </div>
+                  ))}
+                </div>
 
               {heroImages.length > 1 && (
                 <>
@@ -198,6 +178,7 @@ export default function BerandaPage() {
               )}
             </div>
           </div>
+        )}
         </div>
       </section>
 

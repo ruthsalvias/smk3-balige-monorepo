@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     build: {
       outDir: "../public_html", // folder hasil build
+      emptyOutDir: true,
     },
     define: {
       DELCOM_BASEURL: JSON.stringify(env.VITE_DELCOM_BASEURL || ""),

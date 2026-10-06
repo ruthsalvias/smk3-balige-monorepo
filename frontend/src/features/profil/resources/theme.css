@@ -241,16 +241,23 @@ body {
   padding: 0;
 }
 
-/* Blurred background image layer */
+/* Background image layer */
 .smk-beranda-hero-bg {
   position: absolute;
-  inset: -20px;
+  inset: -10px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: blur(18px) brightness(0.3) saturate(1.2);
+  filter: blur(4px) brightness(0.68) saturate(1.1);
   z-index: 0;
   transition: background-image 0.8s ease;
+}
+
+.smk-beranda-hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.72) 0%, rgba(15, 23, 42, 0.42) 55%, rgba(15, 23, 42, 0.15) 100%);
 }
 
 .smk-beranda-hero::before {
@@ -363,18 +370,43 @@ body {
 .smk-hero-carousel {
   position: relative;
   width: 100%;
+  height: 350px;
+  border-radius: 18px;
   overflow: hidden;
+  box-shadow: 0 16px 44px rgba(6, 20, 40, 0.4);
+  background: #0f172a;
 }
 
-.smk-hero-carousel-track {
-  display: flex;
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+.smk-hero-carousel-slides {
+  position: relative;
   width: 100%;
+  height: 100%;
 }
 
 .smk-hero-carousel-slide {
-  min-width: 100%;
-  flex-shrink: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease-in-out;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.smk-hero-carousel-slide.active {
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.smk-hero-carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .smk-hero-carousel-arrow {

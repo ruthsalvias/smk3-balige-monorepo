@@ -21,21 +21,41 @@ export class PengaturanSekolahService {
     loginBgUrl?: string,
   ) {
     const data = await this.find();
-    const payload: Record<string, unknown> = { ...dto };
-    if (logoUrl) payload.logo_url = logoUrl;
+    const payload: Record<string, any> = {};
+
+    // Update logo URL if provided
+    if (logoUrl) {
+      payload.logo_url = logoUrl;
+    }
+
+    // Handle login background URL
     if (loginBgUrl) {
       payload.login_bg_url = loginBgUrl;
-    } else if (dto.login_bg_url === "" || dto.login_bg_url === "null") {
+    } else if (dto.login_bg_url === "" || dto.login_bg_url === "null" || dto.login_bg_url === null) {
+      // If explicitly cleared from the frontend
       payload.login_bg_url = null;
     }
 
-    // Untuk hero_images: gabungkan path baru dengan yang sudah ada (dari dto.hero_images)
-    // dto.hero_images berisi path lama yang masih dipertahankan
-    // heroImagePaths berisi path file baru yang baru di-upload
-    if (heroImagePaths && heroImagePaths.length > 0) {
-      const existing = Array.isArray(dto.hero_images) ? dto.hero_images : [];
-      payload.hero_images = [...existing, ...heroImagePaths];
+    // Handle hero images:
+    // If DTO explicitly sends hero_images (as an array of kept images, even if empty or subset),
+    // use that list and append any newly uploaded hero images.
+    if (dto.hero_images !== undefined) {
+      const keptHeroImages = Array.isArray(dto.hero_images) ? dto.hero_images : [];
+      const newHeroImages = heroImagePaths && heroImagePaths.length > 0 ? heroImagePaths : [];
+      payload.hero_images = [...keptHeroImages, ...newHeroImages];
+    } else if (heroImagePaths && heroImagePaths.length > 0) {
+      const currentHero = (data as any).hero_images;
+      const existingHeroImages = Array.isArray(currentHero) ? currentHero : [];
+      payload.hero_images = [...existingHeroImages, ...heroImagePaths];
     }
+
+    // Update other fields from DTO
+    Object.keys(dto).forEach((key) => {
+      // Avoid overwriting fields that are handled above, and only update if value is present
+      if (key !== 'hero_images' && key !== 'login_bg_url' && key !== 'logo_url' && dto[key] !== undefined) {
+        payload[key] = dto[key];
+      }
+    });
 
     return await data.update(payload);
   }

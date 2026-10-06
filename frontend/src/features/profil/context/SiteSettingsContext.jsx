@@ -33,8 +33,32 @@ export function toLines(value) {
     .filter(Boolean);
 }
 
+const CACHE_PENGATURAN_KEY = "smk3_site_settings_cache_v2";
+
+function getInitialPengaturan() {
+  if (typeof window === "undefined") return DEFAULT_PENGATURAN;
+  try {
+    const raw = localStorage.getItem(CACHE_PENGATURAN_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        return {
+          ...DEFAULT_PENGATURAN,
+          ...parsed,
+          sosial_media: Array.isArray(parsed.sosial_media) ? parsed.sosial_media : [],
+          hero_images: Array.isArray(parsed.hero_images) ? parsed.hero_images : [],
+          login_bg_url: parsed.login_bg_url || null,
+        };
+      }
+    }
+  } catch (e) {
+    // Ignore JSON parse errors
+  }
+  return DEFAULT_PENGATURAN;
+}
+
 export function SiteSettingsProvider({ children }) {
-  const [pengaturan, setPengaturan] = useState(DEFAULT_PENGATURAN);
+  const [pengaturan, setPengaturan] = useState(getInitialPengaturan);
   const [statistik, setStatistik] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,13 +70,17 @@ export function SiteSettingsProvider({ children }) {
         getStatistik().catch(() => []),
       ]);
       if (p) {
-        setPengaturan({
+        const merged = {
           ...DEFAULT_PENGATURAN,
           ...p,
           sosial_media: Array.isArray(p.sosial_media) ? p.sosial_media : [],
           hero_images: Array.isArray(p.hero_images) ? p.hero_images : [],
           login_bg_url: p.login_bg_url || null,
-        });
+        };
+        setPengaturan(merged);
+        try {
+          localStorage.setItem(CACHE_PENGATURAN_KEY, JSON.stringify(merged));
+        } catch (e) {}
       }
       setStatistik(Array.isArray(s) ? s : []);
     } finally {
