@@ -1,11 +1,13 @@
 // src/features/admin/layouts/AdminLayout.jsx
 import { NavLink, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { showConfirmDialog } from "../../../helpers/toolsHelper";
 import { useAuth } from "../../auth/context/AuthContext";
 import Icon from "../../../components/Icon";
 import { useSiteSettings } from "../../profil/context/SiteSettingsContext";
 import { adminPath } from "../../../config/adminPath";
+
+const NAV_SCROLL_KEY = "smk-admin-nav-scroll";
 
 const navGroups = [
   {
@@ -64,12 +66,27 @@ export default function AdminLayout({
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("smk-admin-sidebar") === "collapsed"
   );
+  const navRef = useRef(null);
   const location = useLocation();
   const { isAuth, user, login, logout } = useAuth();
   const { pengaturan } = useSiteSettings();
 
+  const simpanScrollNav = () => {
+    if (navRef.current) {
+      sessionStorage.setItem(NAV_SCROLL_KEY, String(navRef.current.scrollTop));
+    }
+  };
+
   // Tutup drawer otomatis setiap pindah halaman (mode mobile)
   useEffect(() => setSidebarOpen(false), [location.pathname]);
+
+  // AdminLayout di-mount ulang tiap halaman — pulihkan posisi scroll menu.
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const tersimpan = Number(sessionStorage.getItem(NAV_SCROLL_KEY) || 0);
+    el.scrollTop = Number.isFinite(tersimpan) ? tersimpan : 0;
+  }, [location.pathname]);
 
   useEffect(() => {
     localStorage.setItem("smk-admin-sidebar", collapsed ? "collapsed" : "expanded");
@@ -161,7 +178,11 @@ export default function AdminLayout({
           </span>
         </div>
 
-        <nav className="smk-admin-nav">
+        <nav
+          ref={navRef}
+          className="smk-admin-nav"
+          onScroll={simpanScrollNav}
+        >
           {menuTampil.map((group) => (
             <div className="smk-admin-nav-group" key={group.label}>
               <span className="smk-admin-nav-label">{group.label}</span>
@@ -171,6 +192,7 @@ export default function AdminLayout({
                   to={item.to}
                   end={item.end}
                   title={item.label}
+                  onClick={simpanScrollNav}
                   className={({ isActive }) =>
                     `smk-admin-nav-item${isActive ? " active" : ""}`
                   }

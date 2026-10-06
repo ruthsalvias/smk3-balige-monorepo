@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { GatewayInternalGuard } from '@app/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {
@@ -68,6 +70,9 @@ import { ScheduleModule } from './modules/schedule.module';
     ScheduleModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: GatewayInternalGuard },
+  ],
 })
 export class AppModule {}

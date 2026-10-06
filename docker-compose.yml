@@ -6,12 +6,19 @@ name: smk3
 # Service lain tidak mem-publish port apa pun ke host.
 # =============================================================================
 
+x-database-url: &database-url
+  DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+
+x-extra-hosts: &extra-hosts
+  - 'host.docker.internal:host-gateway'
+
 services:
   # ===========================================================================
   # EDGE GATEWAY (SATU-SATUNYA PORT PUBLIK)
   # SPA React + reverse proxy ke api-gateway dan file upload.
   # ===========================================================================
   gateway:
+    container_name: pkm-smk3-balige-gateway
     build:
       context: .
       dockerfile: docker/gateway/Dockerfile
@@ -20,149 +27,15 @@ services:
       - '${APP_PORT:-8080}:80'
     depends_on:
       - api-gateway
+    extra_hosts: *extra-hosts
     networks:
-      smk3_network:
-        aliases:
-          - sekolah_web
-          - sekolah_nginx
-
-  # ===========================================================================
-  # INFRASTRUKTUR INTI
-  # ===========================================================================
-  db-auth:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${AUTH_DB_NAME}
-      POSTGRES_USER: ${AUTH_DB_USER}
-      POSTGRES_PASSWORD: ${AUTH_DB_PASS}
-    volumes:
-      - db_auth_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      smk3_network:
-        aliases:
-          - db_auth
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RMQ_PASS}
-    expose:
-      - '5672'
-    networks:
-      smk3_network:
-        aliases:
-          - sekolah_rabbitmq
-
-  # ===========================================================================
-  # DATABASE MICROSERVICES
-  # ===========================================================================
-  db-pelanggaran:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: db_pelanggaran
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - db_pelanggaran_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d db_pelanggaran']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      smk3_network:
-        aliases:
-          - db_pelanggaran
-
-  db-profile:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: db_profile
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - db_profile_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d db_profile']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      smk3_network:
-        aliases:
-          - db_profile
-
-  db-berita:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: db_berita
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - db_berita_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d db_berita']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      smk3_network:
-        aliases:
-          - db_berita
-
-  db-portofolio:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: db_portofolio
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - db_portofolio_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d db_portofolio']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      smk3_network:
-        aliases:
-          - db_portofolio
-
-  db-management:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: db_management
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - db_management_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d db_management']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      smk3_network:
-        aliases:
-          - db_management
+      - delcom-external-network
 
   # ===========================================================================
   # API GATEWAY (NESTJS)
   # ===========================================================================
   api-gateway:
+    container_name: pkm-smk3-balige-api-gateway
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -177,44 +50,34 @@ services:
           cpus: '0.50'
           memory: 512M
     environment:
-      - NODE_ENV=production
-      # Semua request datang dari origin yang sama lewat gateway.
-      - CORS_ORIGIN=${PUBLIC_ORIGIN}
-      - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
-      # Autentikasi lokal: database akun + kunci penandatangan token.
-      - DATABASE_URL=${AUTH_DB_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_SECONDS=${JWT_EXPIRES_SECONDS:-28800}
-      - MASTER_ADMIN_USERNAME=${MASTER_ADMIN_USERNAME}
-      - MASTER_ADMIN_PASSWORD=${MASTER_ADMIN_PASSWORD}
-      - MASTER_ADMIN_NAMA=${MASTER_ADMIN_NAMA:-Master Admin}
-      - SERVICE_PELANGGARAN_URL=${SERVICE_PELANGGARAN_URL}
-      - SERVICE_PROFILE_URL=${SERVICE_PROFILE_URL}
-      - SERVICE_BERITA_URL=${SERVICE_BERITA_URL}
-      - SERVICE_PORTOFOLIO_URL=${SERVICE_PORTOFOLIO_URL}
-      - SERVICE_MANAGEMENT_URL=${SERVICE_MANAGEMENT_URL}
+      <<: *database-url
+      CORS_ORIGIN: ${PUBLIC_ORIGIN}
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_SECONDS: ${JWT_EXPIRES_SECONDS:-28800}
+      MASTER_ADMIN_USERNAME: ${MASTER_ADMIN_USERNAME}
+      MASTER_ADMIN_PASSWORD: ${MASTER_ADMIN_PASSWORD}
+      MASTER_ADMIN_NAMA: ${MASTER_ADMIN_NAMA:-Master Admin}
+      SERVICE_PELANGGARAN_URL: ${SERVICE_PELANGGARAN_URL}
+      SERVICE_PROFILE_URL: ${SERVICE_PROFILE_URL}
+      SERVICE_BERITA_URL: ${SERVICE_BERITA_URL}
+      SERVICE_PORTOFOLIO_URL: ${SERVICE_PORTOFOLIO_URL}
+      SERVICE_MANAGEMENT_URL: ${SERVICE_MANAGEMENT_URL}
     depends_on:
-      db-auth:
-        condition: service_healthy
-      service-pelanggaran:
-        condition: service_started
-      service-profile:
-        condition: service_started
-      service-berita:
-        condition: service_started
-      service-portofolio:
-        condition: service_started
-      service-management:
-        condition: service_started
+      - service-pelanggaran
+      - service-profile
+      - service-berita
+      - service-portofolio
+      - service-management
+    extra_hosts: *extra-hosts
     networks:
-      smk3_network:
-        aliases:
-          - api_gateway
+      - delcom-external-network
 
   # ===========================================================================
   # NESTJS SERVICES
   # ===========================================================================
   service-pelanggaran:
+    container_name: pkm-smk3-balige-service-pelanggaran
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -222,26 +85,18 @@ services:
         APP_NAME: service-pelanggaran
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - CORS_ORIGIN=${PUBLIC_ORIGIN}
-      - DATABASE_URL=${DB_PELANGGARAN_URL}
-      - RABBITMQ_URL=${RABBITMQ_URL}
-      - PORT=${SERVICE_PELANGGARAN_PORT}
-      - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
+      <<: *database-url
+      PORT: ${SERVICE_PELANGGARAN_PORT}
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET}
       # Sumber data master (siswa & guru) yang dipakai dropdown surat panggilan.
-      - SERVICE_MANAGEMENT_URL=${SERVICE_MANAGEMENT_URL}
-      - MASTER_SYNC_INTERVAL_MS=${MASTER_SYNC_INTERVAL_MS:-300000}
-    depends_on:
-      db-pelanggaran:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_started
+      SERVICE_MANAGEMENT_URL: ${SERVICE_MANAGEMENT_URL}
+      MASTER_SYNC_INTERVAL_MS: ${MASTER_SYNC_INTERVAL_MS:-300000}
+    extra_hosts: *extra-hosts
     networks:
-      smk3_network:
-        aliases:
-          - service_pelanggaran
+      - delcom-external-network
 
   service-profile:
+    container_name: pkm-smk3-balige-service-profile
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -249,25 +104,17 @@ services:
         APP_NAME: service-profile
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - CORS_ORIGIN=${PUBLIC_ORIGIN}
-      - DATABASE_URL=${DB_PROFILE_URL}
-      - RABBITMQ_URL=${RABBITMQ_URL}
-      - PORT=${SERVICE_PROFILE_PORT}
-      - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
+      <<: *database-url
+      PORT: ${SERVICE_PROFILE_PORT}
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET}
     volumes:
-      - profile_uploads:/app/uploads
-    depends_on:
-      db-profile:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_started
+      - ./uploads/profile:/app/uploads
+    extra_hosts: *extra-hosts
     networks:
-      smk3_network:
-        aliases:
-          - service_profile
+      - delcom-external-network
 
   service-berita:
+    container_name: pkm-smk3-balige-service-berita
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -275,23 +122,19 @@ services:
         APP_NAME: service-berita
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - CORS_ORIGIN=${PUBLIC_ORIGIN}
-      - DATABASE_URL=${DB_BERITA_URL}
-      - PORT=${SERVICE_BERITA_PORT}
-      - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
-      - TYPEORM_SYNC=true
+      <<: *database-url
+      NODE_ENV: production
+      PORT: ${SERVICE_BERITA_PORT}
+      TYPEORM_SYNC: 'true'
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET}
     volumes:
-      - berita_uploads:/app/uploads
-    depends_on:
-      db-berita:
-        condition: service_healthy
+      - ./uploads/berita:/app/uploads
+    extra_hosts: *extra-hosts
     networks:
-      smk3_network:
-        aliases:
-          - service_berita
+      - delcom-external-network
 
   service-portofolio:
+    container_name: pkm-smk3-balige-service-portofolio
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -299,22 +142,17 @@ services:
         APP_NAME: service-portofolio
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - CORS_ORIGIN=${PUBLIC_ORIGIN}
-      - DATABASE_URL=${DB_PORTOFOLIO_URL}
-      - PORT=${SERVICE_PORTOFOLIO_PORT}
-      - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
+      <<: *database-url
+      PORT: ${SERVICE_PORTOFOLIO_PORT}
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET}
     volumes:
-      - portofolio_uploads:/app/uploads/portofolio
-    depends_on:
-      db-portofolio:
-        condition: service_healthy
+      - ./uploads/portofolio:/app/uploads/portofolio
+    extra_hosts: *extra-hosts
     networks:
-      smk3_network:
-        aliases:
-          - service_portofolio
+      - delcom-external-network
 
   service-management:
+    container_name: pkm-smk3-balige-service-management
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -322,45 +160,24 @@ services:
         APP_NAME: service-management
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - CORS_ORIGIN=${PUBLIC_ORIGIN}
-      - DATABASE_URL=${DB_MANAGEMENT_URL}
-      - DB_MANAGEMENT_URL=${DB_MANAGEMENT_URL}
-      - DB_HOST=db-management
-      - DB_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - PORT=${SERVICE_MANAGEMENT_PORT}
-      - SERVICE_MANAGEMENT_PORT=${SERVICE_MANAGEMENT_PORT}
-      - INTERNAL_GATEWAY_SECRET=${INTERNAL_GATEWAY_SECRET}
+      <<: *database-url
+      SERVICE_MANAGEMENT_PORT: ${SERVICE_MANAGEMENT_PORT}
+      INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET}
     volumes:
-      - management_uploads:/app/uploads
-    depends_on:
-      db-management:
-        condition: service_healthy
+      - ./uploads/management:/app/uploads
+    extra_hosts: *extra-hosts
     networks:
-      smk3_network:
-        aliases:
-          - service_management
-
-# =============================================================================
-# PERSISTENT STORAGE
-# =============================================================================
-volumes:
-  db_auth_data:
-  db_pelanggaran_data:
-  db_profile_data:
-  db_berita_data:
-  db_portofolio_data:
-  db_management_data:
-  management_uploads:
-  portofolio_uploads:
-  profile_uploads:
-  berita_uploads:
+      - delcom-external-network
 
 # =============================================================================
 # NETWORK
 # =============================================================================
 networks:
-  smk3_network:
+  delcom-external-network:
+    name: delcom-external-network
     driver: bridge
+    external: true
+    ipam:
+      config:
+        - subnet: 10.33.0.0/16
+          gateway: 10.33.0.1

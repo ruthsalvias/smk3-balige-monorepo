@@ -1,11 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
-import * as XLSX from 'xlsx';
 import { Guru } from '../../models/GuruModel';
 import { CreateGuruDto } from './dto/create-guru.dto';
 import { UpdateGuruDto } from './dto/update-guru.dto';
-import { isContohRow, pickField, readSheetRows } from '../../common/excel.util';
+import {
+  isContohRow,
+  pickField,
+  readSheetRows,
+  writeSheetBuffer,
+} from '../../common/excel.util';
 
 @Injectable()
 export class GuruService {
@@ -89,7 +93,8 @@ export class GuruService {
   async exportToBuffer(): Promise<Buffer> {
     const rows = await this.guruRepository.find({ order: { namaLengkap: 'ASC' } });
 
-    const sheet = XLSX.utils.json_to_sheet(
+    return writeSheetBuffer(
+      'Guru',
       rows.map((item, index) => ({
         No: index + 1,
         NIP: item.nip,
@@ -101,14 +106,10 @@ export class GuruService {
         Alamat: item.alamat,
       })),
     );
-
-    const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, 'Guru');
-    return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
   }
 
   async importFromBuffer(buffer: Buffer) {
-    const rows = readSheetRows(buffer, [
+    const rows = await readSheetRows(buffer, [
       'NIP',
       'Nama Lengkap',
       'Mata Pelajaran',
