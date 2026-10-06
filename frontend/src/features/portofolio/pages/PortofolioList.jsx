@@ -86,10 +86,10 @@ function PortofolioList() {
         </div>
       </section>
 
-      <div style={{ flex: 1, padding: '40px 52px' }}>
+      <div className="smk-portofolio-page-container">
 
         {/* Header aksi */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div className="smk-portofolio-list-header">
           <div>
             <span style={{
               backgroundColor: '#fde68a', padding: '4px 14px', borderRadius: '20px',

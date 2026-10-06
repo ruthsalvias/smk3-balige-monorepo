@@ -60,14 +60,35 @@ export default function Navbar() {
 
   return (
     <header className="smk-navbar">
+      {open && (
+        <div
+          className="smk-nav-backdrop"
+          onClick={() => {
+            setOpen(false);
+            setProfilOpen(false);
+          }}
+          aria-hidden="true"
+        />
+      )}
       <div className="smk-nav-inner">
         <NavLink to="/" className="smk-nav-logo">
           <span className="smk-logo-icon">
             {logoSrc ? (
-              <img src={logoSrc} alt="" className="smk-logo-img" />
-            ) : (
+              <img
+                src={logoSrc}
+                alt=""
+                className="smk-logo-img"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  if (e.currentTarget.nextElementSibling) {
+                    e.currentTarget.nextElementSibling.style.display = "inline-flex";
+                  }
+                }}
+              />
+            ) : null}
+            <span style={{ display: logoSrc ? "none" : "inline-flex" }}>
               <Icon name="graduation" size={22} />
-            )}
+            </span>
           </span>
           <span className="smk-logo-text">
             <strong>{pengaturan.nama_sekolah}</strong>

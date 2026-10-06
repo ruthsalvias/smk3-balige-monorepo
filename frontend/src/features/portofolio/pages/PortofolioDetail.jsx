@@ -123,7 +123,7 @@ function PortofolioDetail() {
         </div>
       </section>
 
-      <div style={{ flex: 1, padding: '40px 52px' }}>
+      <div className="smk-portofolio-page-container">
 
         {/* Pesan aksi */}
         {actionMsg && (
@@ -139,10 +139,10 @@ function PortofolioDetail() {
         )}
 
         {/* Tombol aksi */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className="smk-portofolio-detail-header">
           <StatusBadge status={portfolio.status} />
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {/* Tombol siswa: Edit & Submit */}
             {isOwner && isSiswa && (
               <>
@@ -187,8 +187,8 @@ function PortofolioDetail() {
           </div>
         </div>
 
-        {/* Konten detail — sama seperti sebelumnya */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+        {/* Konten detail */}
+        <div className="smk-portofolio-detail-grid">
           <div>
             <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', minHeight: '260px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {portfolio.image ? (

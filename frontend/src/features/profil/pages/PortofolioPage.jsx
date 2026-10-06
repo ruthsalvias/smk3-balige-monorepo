@@ -157,12 +157,24 @@ export default function PortofolioPage() {
                   >
                     <div className="smk-galeri-img">
                       {img ? (
-                        <img src={img} alt={item.title} loading="lazy" />
-                      ) : (
-                        <div className="smk-galeri-placeholder">
-                          <Icon name="image" size={40} />
-                        </div>
-                      )}
+                        <img
+                          src={img}
+                          alt={item.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.style.display = "flex";
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="smk-galeri-placeholder"
+                        style={{ display: img ? "none" : "flex" }}
+                      >
+                        <Icon name="image" size={40} />
+                      </div>
                       {(item.category || item.major) && (
                         <span className="smk-galeri-chip">
                           {item.category || item.major}

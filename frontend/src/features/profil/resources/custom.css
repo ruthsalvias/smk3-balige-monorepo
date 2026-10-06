@@ -852,7 +852,7 @@ img {
 .smk-beranda-hero-img img {
   width: 100%;
   max-width: none;
-  height: 320px;
+  height: 100%;
   object-fit: cover;
   border-radius: 0;
   display: block;

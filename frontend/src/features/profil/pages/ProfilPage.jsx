@@ -32,7 +32,8 @@ export default function ProfilPage() {
   const loading = useSelector((s) => s.profilLoading);
 
   const heroImages = useMemo(() => {
-    return (pengaturan?.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+    const list = (pengaturan?.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+    return list.length > 0 ? list : ["/hero-fallback.png"];
   }, [pengaturan?.hero_images]);
 
   const { current, next, prev, goTo } = useHeroSlider(heroImages);
@@ -109,6 +110,11 @@ export default function ProfilPage() {
                       <img
                         src={src}
                         alt={`${pengaturan?.nama_sekolah || "SMK"} ${i + 1}`}
+                        onError={(e) => {
+                          if (!e.currentTarget.src.includes("hero-fallback.png")) {
+                            e.currentTarget.src = "/hero-fallback.png";
+                          }
+                        }}
                       />
                     </div>
                   ))}

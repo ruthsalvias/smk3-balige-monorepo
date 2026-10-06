@@ -40,9 +40,10 @@ export default function BerandaPage() {
   const agenda = useSelector((s) => s.agenda || []);
   const pengumuman = useSelector((s) => s.pengumuman || []);
 
-  // Build hero images array: use DB images dynamically
+  // Build hero images array: use DB images dynamically with resilient fallback
   const heroImages = useMemo(() => {
-    return (pengaturan?.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+    const list = (pengaturan?.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+    return list.length > 0 ? list : ["/hero-fallback.png"];
   }, [pengaturan?.hero_images]);
 
   const { current, next, prev, goTo } = useHeroSlider(heroImages);
@@ -139,7 +140,15 @@ export default function BerandaPage() {
                       className={`smk-hero-carousel-slide${i === current ? " active" : ""}`}
                       key={i}
                     >
-                      <img src={src} alt={`${pengaturan?.nama_sekolah || "SMK"} ${i + 1}`} />
+                      <img
+                        src={src}
+                        alt={`${pengaturan?.nama_sekolah || "SMK"} ${i + 1}`}
+                        onError={(e) => {
+                          if (!e.currentTarget.src.includes("hero-fallback.png")) {
+                            e.currentTarget.src = "/hero-fallback.png";
+                          }
+                        }}
+                      />
                     </div>
                   ))}
                 </div>
@@ -233,12 +242,23 @@ export default function BerandaPage() {
                     <article className="smk-featured-card">
                       <div className="smk-featured-img">
                         {kabarUtama.img ? (
-                          <img src={kabarUtama.img} alt={kabarUtama.title} />
-                        ) : (
-                          <div className="smk-berita-img-placeholder">
-                            {pengaturan.nama_singkat}
-                          </div>
-                        )}
+                          <img
+                            src={kabarUtama.img}
+                            alt={kabarUtama.title}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                              if (e.currentTarget.nextElementSibling) {
+                                e.currentTarget.nextElementSibling.style.display = "flex";
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="smk-berita-img-placeholder"
+                          style={{ display: kabarUtama.img ? "none" : "flex" }}
+                        >
+                          {pengaturan.nama_singkat || "SMK 3"}
+                        </div>
                         <span
                           className="smk-berita-tag"
                           style={{ background: kategoriColors[kabarUtama.tag] }}
@@ -313,12 +333,24 @@ export default function BerandaPage() {
                       >
                         <div className="smk-berita-img">
                           {item.img ? (
-                            <img src={item.img} alt={item.title} />
-                          ) : (
-                            <div className="smk-berita-img-placeholder">
-                              {pengaturan.nama_singkat}
-                            </div>
-                          )}
+                            <img
+                              src={item.img}
+                              alt={item.title}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                if (e.currentTarget.nextElementSibling) {
+                                  e.currentTarget.nextElementSibling.style.display = "flex";
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="smk-berita-img-placeholder"
+                            style={{ display: item.img ? "none" : "flex" }}
+                          >
+                            {pengaturan.nama_singkat || "SMK 3"}
+                          </div>
                           <span
                             className="smk-berita-tag"
                             style={{ background: kategoriColors[item.tag] }}

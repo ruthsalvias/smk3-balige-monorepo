@@ -70,7 +70,21 @@ export default function Footer() {
           <div className="smk-footer-box smk-footer-about">
             <div className="smk-footer-brand">
               <span className="smk-footer-brand-logo">
-                {logoSrc ? <img src={logoSrc} alt="" /> : <Icon name="graduation" size={24} />}
+                {logoSrc ? (
+                  <img
+                    src={logoSrc}
+                    alt=""
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      if (e.currentTarget.nextElementSibling) {
+                        e.currentTarget.nextElementSibling.style.display = "inline-flex";
+                      }
+                    }}
+                  />
+                ) : null}
+                <span style={{ display: logoSrc ? "none" : "inline-flex" }}>
+                  <Icon name="graduation" size={24} />
+                </span>
               </span>
               <span className="smk-footer-brand-text">
                 <strong>{pengaturan.nama_sekolah}</strong>
