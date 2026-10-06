@@ -40,6 +40,7 @@ const navGroups = [
       { to: adminPath("/pelanggaran"), icon: "warning", label: "Pelanggaran" },
       { to: adminPath("/data/siswa"), icon: "students", label: "Data Siswa" },
       { to: adminPath("/data/guru"), icon: "teacher", label: "Data Guru" },
+      { to: adminPath("/skl"), icon: "folder", label: "Penyimpanan SKL" },
     ],
   },
   {

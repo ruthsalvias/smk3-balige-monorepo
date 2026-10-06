@@ -524,6 +524,18 @@ proxyProfileDelete(@Req() req: Request, @Res() res: Response) {
     return this.forward('management', req, res);
   }
 
+  /* =========================
+     SKL DRIVE (PENYIMPANAN SKL G-DRIVE STYLE)
+  ========================= */
+  @All([
+    'management/skl',
+    'management/skl/*path',
+  ])
+  @Roles(Role.ADMIN, Role.GURU)
+  proxySklDrive(@Req() req: Request, @Res() res: Response) {
+    return this.forward('management', req, res);
+  }
+
   @All('management')
   @Roles(Role.ADMIN)
   proxyManagementRoot(@Req() req: Request, @Res() res: Response) {
