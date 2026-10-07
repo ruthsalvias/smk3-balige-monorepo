@@ -1769,7 +1769,7 @@
 }
 .smk-form-group input,
 .smk-form-group textarea,
-.smk-form-group select,
+.smk-form-group select:not(.smk-rte-select),
 .smk-repeater-row input,
 .smk-repeater-row select {
   width: 100%;
@@ -1786,7 +1786,7 @@
 .smk-form-group textarea { min-height: 92px; resize: vertical; line-height: 1.6; }
 .smk-form-group input:focus,
 .smk-form-group textarea:focus,
-.smk-form-group select:focus,
+.smk-form-group select:not(.smk-rte-select):focus,
 .smk-repeater-row input:focus,
 .smk-repeater-row select:focus {
   outline: none;
@@ -1972,14 +1972,44 @@
 }
 .smk-rte-btn:hover { background: #e6ecf7; border-color: #ccd6e8; }
 .smk-rte-btn.is-active { background: #1b2a5b; color: #fff; }
+.smk-form-group .smk-rte-select,
+.smk-rte-toolbar select.smk-rte-select,
 .smk-rte-select {
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid #d8dfec;
-  border-radius: 7px;
-  background: #fff;
-  font-size: 0.85rem;
-  cursor: pointer;
+  width: auto !important;
+  min-width: 120px !important;
+  max-width: 150px !important;
+  height: 32px !important;
+  line-height: 22px !important;
+  padding: 4px 28px 4px 10px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  border: 1px solid #ccd6e8 !important;
+  border-radius: 7px !important;
+  background-color: #ffffff !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 13px 13px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important;
+}
+.smk-form-group .smk-rte-select:focus,
+.smk-rte-toolbar select.smk-rte-select:focus,
+.smk-rte-select:focus {
+  outline: none !important;
+  border-color: #1b2a5b !important;
+  box-shadow: 0 0 0 2px rgba(27, 42, 91, 0.16) !important;
 }
 .smk-rte-color { position: relative; }
 .smk-rte-color-icon {
@@ -2038,6 +2068,8 @@
   .smk-modal-body { max-height: 70vh; }
   .smk-rte-toolbar { gap: 3px; padding: 6px; }
   .smk-rte-btn { min-width: 28px; height: 28px; padding: 0 5px; }
+  .smk-form-group .smk-rte-select,
+  .smk-rte-select { height: 28px !important; font-size: 12px !important; padding: 2px 24px 2px 8px !important; }
   .smk-rte-editor { min-height: 180px; }
 
   .smk-manajemen-container { padding: 0 14px; }
