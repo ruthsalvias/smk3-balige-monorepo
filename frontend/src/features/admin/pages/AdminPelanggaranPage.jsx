@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import { AdminCard, AdminTable, AdminModal, ActionButtons } from "../components/AdminComponents";
 import { showConfirmDialog, showErrorDialog } from "../../../helpers/toolsHelper";
@@ -9,11 +9,317 @@ import apiGateway from "../../../config/axios";
 // 2. Buat prefix untuk mempersingkat path URL
 const PREFIX = "/pelanggaran/surat-panggilan";
 
+function SearchableSiswaSelect({ value, onChange, masterSiswa, loading, onRefresh }) {
+  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const selectedSiswa = useMemo(() => {
+    return masterSiswa.find((s) => s.id === value);
+  }, [masterSiswa, value]);
+
+  // Filter siswa berdasarkan nama, kelas, atau NIS
+  const filteredList = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return masterSiswa;
+    return masterSiswa.filter((s) => {
+      const nama = (s.nama || "").toLowerCase();
+      const kelas = (s.kelas || "").toLowerCase();
+      const nis = (s.nis || "").toLowerCase();
+      return nama.includes(q) || kelas.includes(q) || nis.includes(q);
+    });
+  }, [masterSiswa, query]);
+
+  // Tutup dropdown saat klik di luar
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (siswa) => {
+    onChange(siswa.id);
+    setQuery("");
+    setIsOpen(false);
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange("");
+    setQuery("");
+    setIsOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      {selectedSiswa && !isOpen ? (
+        // Tampilan saat siswa sudah dipilih
+        <div
+          onClick={() => {
+            setIsOpen(true);
+            setTimeout(() => inputRef.current?.focus(), 50);
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "8px 12px",
+            background: "#f0fdf4",
+            border: "1.5px solid #86efac",
+            borderRadius: "8px",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+          title="Klik untuk mengganti siswa"
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                background: "#16a34a",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: "13px",
+                flexShrink: 0,
+              }}
+            >
+              {(selectedSiswa.nama || "S").charAt(0).toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 600, color: "#166534", fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {selectedSiswa.nama}
+              </div>
+              <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "11px", color: "#15803d", marginTop: "1px" }}>
+                <span style={{ background: "#dcfce7", padding: "1px 6px", borderRadius: "4px", fontWeight: 600 }}>
+                  Kelas: {selectedSiswa.kelas || "-"}
+                </span>
+                {selectedSiswa.nis && <span>• NIS: {selectedSiswa.nis}</span>}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClear}
+            style={{
+              background: "#fee2e2",
+              color: "#dc2626",
+              border: "1px solid #fca5a5",
+              borderRadius: "6px",
+              padding: "4px 8px",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            ✕ Ganti
+          </button>
+        </div>
+      ) : (
+        // Input pencarian saat belum dipilih atau sedang mencari
+        <div style={{ position: "relative" }}>
+          <span
+            style={{
+              position: "absolute",
+              left: "12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              fontSize: "14px",
+              color: "#94a3b8",
+              pointerEvents: "none",
+            }}
+          >
+            🔍
+          </span>
+          <input
+            ref={inputRef}
+            type="text"
+            className="smk-form-input"
+            style={{
+              paddingLeft: "36px",
+              paddingRight: query ? "32px" : "12px",
+              borderColor: isOpen ? "#3b82f6" : undefined,
+              boxShadow: isOpen ? "0 0 0 3px rgba(59, 130, 246, 0.15)" : undefined,
+              backgroundColor: "#ffffff",
+            }}
+            placeholder="Ketik nama, NIS, atau kelas siswa..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setIsOpen(true);
+            }}
+            onFocus={() => setIsOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setIsOpen(false);
+            }}
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              style={{
+                position: "absolute",
+                right: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                cursor: "pointer",
+                fontSize: "14px",
+                padding: "2px",
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Floating Hasil Pencarian Dropdown */}
+      {isOpen && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
+            borderRadius: "8px",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+            maxHeight: "220px",
+            overflowY: "auto",
+            zIndex: 100,
+          }}
+        >
+          {loading ? (
+            <div style={{ padding: "14px", textAlign: "center", color: "#64748b", fontSize: "12px" }}>
+              ⏳ Memuat data siswa...
+            </div>
+          ) : masterSiswa.length === 0 ? (
+            <div style={{ padding: "14px", textAlign: "center" }}>
+              <div style={{ color: "#ef4444", fontSize: "12px", marginBottom: "6px" }}>
+                Data siswa belum termuat dari server.
+              </div>
+              {onRefresh && (
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: "11px",
+                    background: "#eff6ff",
+                    color: "#2563eb",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  🔄 Sinkronkan Data
+                </button>
+              )}
+            </div>
+          ) : filteredList.length === 0 ? (
+            <div style={{ padding: "14px", textAlign: "center", color: "#64748b", fontSize: "12px" }}>
+              Tidak ditemukan siswa dengan kata kunci "{query}"
+            </div>
+          ) : (
+            <div>
+              <div
+                style={{
+                  padding: "6px 12px",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                  background: "#f8fafc",
+                  borderBottom: "1px solid #e2e8f0",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                {filteredList.length} Siswa Ditemukan (Klik untuk memilih)
+              </div>
+              {filteredList.map((s) => {
+                const isSelected = s.id === value;
+                return (
+                  <div
+                    key={s.id}
+                    onClick={() => handleSelect(s)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      borderBottom: "1px solid #f1f5f9",
+                      background: isSelected ? "#eff6ff" : "transparent",
+                      transition: "background-color 0.1s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) e.currentTarget.style.backgroundColor = "#f8fafc";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: isSelected ? 700 : 600,
+                          color: isSelected ? "#1d4ed8" : "#0f172a",
+                          fontSize: "13px",
+                        }}
+                      >
+                        {s.nama}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#64748b", marginTop: "1px" }}>
+                        {s.nis ? `NIS: ${s.nis}` : "NIS: -"}
+                        {s.no_wa_ortu ? ` • WA: ${s.no_wa_ortu}` : ""}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        borderRadius: "5px",
+                        background: isSelected ? "#dbeafe" : "#f1f5f9",
+                        color: isSelected ? "#1e40af" : "#475569",
+                        border: isSelected ? "1px solid #bfdbfe" : "1px solid #e2e8f0",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {s.kelas || "-"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPelanggaranPage() {
   const [data, setData] = useState([]);
   const [masterSiswa, setMasterSiswa] = useState([]);
   const [masterGuru, setMasterGuru] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMaster, setLoadingMaster] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +353,7 @@ export default function AdminPelanggaranPage() {
   };
 
   const fetchMasterData = async () => {
+    setLoadingMaster(true);
     try {
       const resSiswa = await apiGateway.get(`${PREFIX}/master/siswa`);
       if (resSiswa.data.status === "success") setMasterSiswa(resSiswa.data.data);
@@ -55,6 +362,8 @@ export default function AdminPelanggaranPage() {
       if (resGuru.data.status === "success") setMasterGuru(resGuru.data.data);
     } catch (error) {
       console.error("Gagal load master data:", error);
+    } finally {
+      setLoadingMaster(false);
     }
   };
 
@@ -237,13 +546,23 @@ export default function AdminPelanggaranPage() {
         submitting={submitting}
       >
         <div className="smk-form-group">
-          <label>Pilih Siswa <span style={{color: 'red'}}>*</span></label>
-          <select className="smk-form-input" value={idSiswa} onChange={(e) => setIdSiswa(e.target.value)}>
-            <option value="">-- Pilih Siswa Bermasalah --</option>
-            {masterSiswa.map(s => (
-              <option key={s.id} value={s.id}>{s.nama} ({s.kelas})</option>
-            ))}
-          </select>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+            <label style={{ margin: 0 }}>
+              Pilih Siswa <span style={{ color: "red" }}>*</span>
+            </label>
+            {masterSiswa.length > 0 && (
+              <span style={{ fontSize: "11px", color: "#64748b" }}>
+                {masterSiswa.length} siswa terdaftar
+              </span>
+            )}
+          </div>
+          <SearchableSiswaSelect
+            value={idSiswa}
+            onChange={setIdSiswa}
+            masterSiswa={masterSiswa}
+            loading={loadingMaster}
+            onRefresh={fetchMasterData}
+          />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>

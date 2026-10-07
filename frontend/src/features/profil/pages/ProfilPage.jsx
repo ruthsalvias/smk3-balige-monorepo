@@ -319,22 +319,47 @@ export default function ProfilPage() {
         </div>
       </section>
 
-      {/* ── AKREDITASI & PRESTASI ── */}
+      {/* ── PRESTASI SEKOLAH ── */}
       <section className="smk-section" id="prestasi">
         <div className="smk-container smk-center">
-          <h2 className="smk-section-title smk-title-center">
-            Akreditasi &amp; Prestasi
+          <span className="smk-badge smk-badge-outline">Prestasi &amp; Penghargaan</span>
+          <h2 className="smk-section-title smk-title-center" style={{ marginTop: "16px" }}>
+            Prestasi Sekolah
           </h2>
-          <div className="smk-prestasi-block">
+          <p className="smk-section-subtitle">
+            Torehan prestasi dan kejuaraan membanggakan yang diraih oleh siswa serta guru SMK Negeri 3 Balige.
+          </p>
+
+          {/* Prestasi Cards Grid */}
+          <div className="smk-prestasi-grid">
             {prestasi.length > 0 ? (
-              <ul className="smk-prestasi-list">
-                {prestasi.map((item, idx) => (
-                  <li key={item.id}>
-                    {`${idx + 1}. ${item.judul} — ${item.tingkat.charAt(0).toUpperCase() + item.tingkat.slice(1)}, ${item.tahun}`}
-                    {item.keterangan && ` (${item.keterangan})`}
-                  </li>
-                ))}
-              </ul>
+              prestasi.map((item, idx) => {
+                const tingkatKey = (item.tingkat || "").toLowerCase();
+                return (
+                  <Reveal
+                    variant="up"
+                    delay={(idx % 3) * 80}
+                    className={`smk-prestasi-card smk-prestasi-card-${tingkatKey}`}
+                    key={item.id}
+                  >
+                    <div className="smk-prestasi-top">
+                      <span className={`smk-prestasi-badge smk-prestasi-badge-${tingkatKey}`}>
+                        <Icon name="trophy" size={13} />
+                        Tingkat {item.tingkat ? item.tingkat.charAt(0).toUpperCase() + item.tingkat.slice(1) : "Sekolah"}
+                      </span>
+                      {item.tahun && (
+                        <span className="smk-prestasi-year">
+                          <Icon name="calendar" size={13} /> {item.tahun}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="smk-prestasi-title">{item.judul}</h4>
+                    {item.keterangan && (
+                      <p className="smk-prestasi-desc">{item.keterangan}</p>
+                    )}
+                  </Reveal>
+                );
+              })
             ) : (
               <p className="smk-state-text">Data prestasi belum tersedia.</p>
             )}
@@ -382,6 +407,9 @@ export default function ProfilPage() {
           <h2 className="smk-section-title smk-title-center" style={{ marginTop: "16px" }}>
             Mitra Kerjasama
           </h2>
+          <p className="smk-section-subtitle">
+            Sinergi dan kolaborasi strategis bersama dunia usaha &amp; industri.
+          </p>
           <div className="smk-mitra-grid">
             {mitraKerjasama.length > 0 ? (
               mitraKerjasama.map((item, idx) => (
@@ -391,18 +419,19 @@ export default function ProfilPage() {
                   className="smk-mitra-card"
                   key={item.id}
                 >
-                  {item.logo ? (
-                    <img
-                      src={toImgUrl(item.logo)}
-                      alt={item.nama_mitra}
-                      style={{ width: 56, height: 56, objectFit: "contain", marginBottom: 8 }}
-                      onError={(e) => { e.target.style.display = "none"; }}
-                    />
-                  ) : (
-                    <span className="smk-mitra-logo">
-                      <Icon name="handshake" size={26} />
-                    </span>
-                  )}
+                  <div className="smk-mitra-logo-wrap">
+                    {item.logo ? (
+                      <img
+                        src={toImgUrl(item.logo)}
+                        alt={item.nama_mitra}
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    ) : (
+                      <span className="smk-mitra-logo">
+                        <Icon name="handshake" size={24} />
+                      </span>
+                    )}
+                  </div>
                   <span className="smk-mitra-name">{item.nama_mitra}</span>
                 </Reveal>
               ))

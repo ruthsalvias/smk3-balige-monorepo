@@ -61,6 +61,11 @@ body {
   text-align: left;
 }
 
+.smk-title-center,
+.smk-center .smk-section-title {
+  text-align: center;
+}
+
 .smk-section-title::after { content: none; }
 
 .smk-link-more {
@@ -705,6 +710,311 @@ body {
   font-size: 13px;
   line-height: 1.7;
   color: var(--p-muted);
+}
+
+/* ══ AKREDITASI & PRESTASI ════════════════════════════════ */
+.smk-akreditasi-hero-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid var(--p-line);
+  border-radius: 20px;
+  padding: 28px 32px;
+  margin: 28px 0 36px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  text-align: left;
+  box-shadow: 0 8px 30px rgba(10, 31, 61, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.smk-akreditasi-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(180deg, var(--p-gold) 0%, #d97706 100%);
+}
+
+.smk-akreditasi-badge-box {
+  width: 96px;
+  height: 96px;
+  min-width: 96px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--p-navy-900) 0%, var(--p-navy-700) 100%);
+  border: 2px solid var(--p-gold);
+  box-shadow: 0 8px 24px rgba(10, 31, 61, 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.smk-akreditasi-grade {
+  font-size: 44px;
+  line-height: 1;
+  color: var(--p-gold);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.smk-akreditasi-grade-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.smk-akreditasi-content {
+  flex: 1;
+}
+
+.smk-akreditasi-header-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.smk-akreditasi-header-row h3 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--p-navy-800);
+  margin: 0;
+}
+
+.smk-akreditasi-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.smk-akreditasi-desc {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--p-muted);
+  margin: 0 0 16px;
+}
+
+.smk-akreditasi-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smk-akreditasi-tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid var(--p-line);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p-navy-800);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+/* ══ PRESTASI SHOWCASE ════════════════════════════════════ */
+.smk-prestasi-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0 22px;
+  text-align: left;
+}
+
+.smk-prestasi-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--p-navy-800);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.smk-prestasi-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p-muted);
+  background: #fff;
+  border: 1px solid var(--p-line);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.smk-prestasi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.smk-prestasi-card {
+  background: #ffffff;
+  border: 1px solid var(--p-line);
+  border-radius: 16px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  box-shadow: 0 4px 18px rgba(10, 31, 61, 0.05);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.smk-prestasi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--p-line);
+}
+
+.smk-prestasi-card-internasional::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
+.smk-prestasi-card-nasional::before      { background: linear-gradient(90deg, #1b4f9b, #3b82f6); }
+.smk-prestasi-card-provinsi::before      { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+.smk-prestasi-card-kabupaten::before     { background: linear-gradient(90deg, #4f46e5, #6366f1); }
+
+.smk-prestasi-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--p-gold);
+  box-shadow: 0 12px 28px rgba(10, 31, 61, 0.09);
+}
+
+.smk-prestasi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.smk-prestasi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+.smk-prestasi-badge-internasional { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.smk-prestasi-badge-nasional      { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.smk-prestasi-badge-provinsi      { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+.smk-prestasi-badge-kabupaten     { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+
+.smk-prestasi-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p-muted);
+  background: #f1f4f9;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.smk-prestasi-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--p-navy-800);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+.smk-prestasi-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--p-muted);
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+/* ══ MITRA KERJASAMA ══════════════════════════════════════ */
+.smk-mitra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 36px 0 0;
+}
+
+.smk-mitra-card {
+  background: #ffffff;
+  border: 1px solid var(--p-line);
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  box-shadow: 0 4px 18px rgba(10, 31, 61, 0.05);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.smk-mitra-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--p-gold);
+  box-shadow: 0 10px 28px rgba(10, 31, 61, 0.09);
+}
+
+.smk-mitra-logo-wrap {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.smk-mitra-logo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.smk-mitra-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--p-navy-800);
+  line-height: 1.4;
+  flex: 1;
 }
 
 /* ══ SUBPAGE HERO ═════════════════════════════════════════ */
@@ -2339,6 +2649,35 @@ html { overflow-x: hidden; }
   .smk-facility-grid {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
+  }
+
+  /* Akreditasi & Prestasi Mobile */
+  .smk-akreditasi-hero-card {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 24px 18px !important;
+    gap: 18px !important;
+  }
+  .smk-akreditasi-hero-card::before {
+    width: 100% !important;
+    height: 5px !important;
+    bottom: auto !important;
+    right: 0 !important;
+  }
+  .smk-akreditasi-header-row {
+    justify-content: center !important;
+  }
+  .smk-akreditasi-tags {
+    justify-content: center !important;
+  }
+  .smk-prestasi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+  .smk-prestasi-section-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
   }
 
   .smk-facility-card img {

@@ -81,21 +81,42 @@ export class MasterSyncService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    private async ambilDariManagement<T>(path: string): Promise<T[]> {
-        const res = await fetch(`${this.managementUrl}/api${path}`);
-        if (!res.ok) {
-            throw new Error(`service-management ${path} mengembalikan ${res.status}`);
+    private async ambilDariManagement<T>(resourcePath: string): Promise<T[]> {
+        const headers: Record<string, string> = {};
+        const secret = process.env.INTERNAL_GATEWAY_SECRET;
+        if (secret) {
+            headers['x-gateway-secret'] = secret;
         }
-        const isi = (await res.json()) as { data?: Record<string, T[]> };
-        const data = isi?.data ?? {};
-        const daftar = data.siswa ?? data.guru ?? [];
-        return Array.isArray(daftar) ? daftar : [];
+
+        const semua: T[] = [];
+        let offset = 0;
+        const limit = 200;
+        let hasMore = true;
+
+        while (hasMore) {
+            const sep = resourcePath.includes('?') ? '&' : '?';
+            const url = `${this.managementUrl}/api${resourcePath}${sep}limit=${limit}&offset=${offset}`;
+            const res = await fetch(url, { headers });
+            if (!res.ok) {
+                throw new Error(`service-management ${resourcePath} mengembalikan ${res.status}`);
+            }
+            const isi = (await res.json()) as { data?: Record<string, any> };
+            const data = isi?.data ?? {};
+            const daftar = (data.siswa ?? data.guru ?? []) as T[];
+            semua.push(...daftar);
+
+            if (!data.hasMore || daftar.length === 0 || daftar.length < limit) {
+                hasMore = false;
+            } else {
+                offset += limit;
+            }
+        }
+
+        return semua;
     }
 
     private async sinkronSiswa(): Promise<void> {
-        const daftar = await this.ambilDariManagement<ManagementSiswa>(
-            '/siswa?limit=200&offset=0',
-        );
+        const daftar = await this.ambilDariManagement<ManagementSiswa>('/siswa');
 
         const records: MasterRecord[] = daftar
             .filter((s) => s && s.id)
@@ -104,7 +125,7 @@ export class MasterSyncService implements OnModuleInit, OnModuleDestroy {
                 nama: s.namaLengkap || 'Tanpa Nama',
                 kelas: s.kelas || '',
                 no_wa_ortu: s.noWaOrtu || null,
-                nis: s.nis || null,
+                nis: s.nis || (s as any).nisn || null,
             }));
 
         await this.upsert(
@@ -116,9 +137,7 @@ export class MasterSyncService implements OnModuleInit, OnModuleDestroy {
     }
 
     private async sinkronGuru(): Promise<void> {
-        const daftar = await this.ambilDariManagement<ManagementGuru>(
-            '/guru?limit=200&offset=0',
-        );
+        const daftar = await this.ambilDariManagement<ManagementGuru>('/guru');
 
         const records: MasterRecord[] = daftar
             .filter((g) => g && g.id)
