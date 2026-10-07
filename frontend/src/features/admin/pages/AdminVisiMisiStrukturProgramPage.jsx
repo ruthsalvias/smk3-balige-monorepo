@@ -184,6 +184,32 @@ import {
   asyncPutProgramKeahlian, asyncDeleteProgramKeahlian,
 } from "../../profil/states/action";
 
+// Ikon jurusan — Tata Boga & Tata Busana di atas, sisanya ikon umum cadangan
+const PROGRAM_ICON_OPTIONS = [
+  // === Jurusan aktif ===
+  { name: "utensils",   label: "Tata Boga" },
+  { name: "scissors",   label: "Tata Busana" },
+  // === Umum / cadangan ===
+  { name: "graduation", label: "Akademik" },
+  { name: "coffee",     label: "Perhotelan" },
+  { name: "laptop",     label: "Komputer" },
+  { name: "monitor",    label: "TKJ" },
+  { name: "code",       label: "Pemrograman" },
+  { name: "wrench",     label: "Mekanik" },
+  { name: "zap",        label: "Listrik" },
+  { name: "car",        label: "Otomotif" },
+  { name: "building",   label: "Bangunan" },
+  { name: "camera",     label: "Fotografi" },
+  { name: "image",      label: "Multimedia" },
+  { name: "palette",    label: "Seni/Desain" },
+  { name: "briefcase",  label: "Perkantoran" },
+  { name: "chart",      label: "Akuntansi" },
+  { name: "book",       label: "Literasi" },
+  { name: "shield",     label: "K3" },
+  { name: "star",       label: "Unggulan" },
+  { name: "trophy",     label: "Prestasi" },
+];
+
 export function AdminProgramPage() {
   const dispatch = useDispatch();
   const data     = useSelector((s) => s.programKeahlian);
@@ -194,7 +220,7 @@ export function AdminProgramPage() {
   const [submitting, setSubmitting] = useState(false);
   const [nama, setNama]             = useInput("");
   const [deskripsi, setDeskripsi]   = useInput("");
-  const [icon, setIcon]             = useInput("");
+  const [icon, setIcon]             = useState("graduation");
 
   useEffect(() => { dispatch(asyncGetProgramKeahlian()); }, [dispatch]);
 
@@ -202,7 +228,7 @@ export function AdminProgramPage() {
     setEditItem(null);
     setNama({ target: { value: "" } });
     setDeskripsi({ target: { value: "" } });
-    setIcon({ target: { value: "" } });
+    setIcon("graduation");
     setModalOpen(true);
   };
 
@@ -210,7 +236,7 @@ export function AdminProgramPage() {
     setEditItem(item);
     setNama({ target: { value: item.nama_jurusan } });
     setDeskripsi({ target: { value: item.deskripsi ?? "" } });
-    setIcon({ target: { value: item.icon ?? "" } });
+    setIcon(item.icon || "graduation");
     setModalOpen(true);
   };
 
@@ -235,7 +261,16 @@ export function AdminProgramPage() {
             <tr key={item.id}>
               <td><strong>{item.nama_jurusan}</strong></td>
               <td className="smk-admin-td-truncate">{item.deskripsi?.slice(0, 80)}</td>
-              <td style={{ fontFamily: "monospace", fontSize: 12 }}>{item.icon ?? "—"}</td>
+              <td>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span className="smk-stat-icon-cell" style={{ width: 34, height: 34, borderRadius: 8 }}>
+                    <Icon name={item.icon || "graduation"} size={18} />
+                  </span>
+                  <span style={{ fontSize: 13, color: "#334155" }}>
+                    {PROGRAM_ICON_OPTIONS.find((o) => o.name === item.icon)?.label || item.icon || "Akademik"}
+                  </span>
+                </div>
+              </td>
               <td><ActionButtons onEdit={() => openEdit(item)} onDelete={() => handleDelete(item)} /></td>
             </tr>
           ))}
@@ -250,8 +285,38 @@ export function AdminProgramPage() {
           <input className="smk-form-input" type="text" value={nama} onChange={setNama} placeholder="contoh: Teknik Komputer & Jaringan" />
         </div>
         <div className="smk-form-group">
-          <label>Icon (opsional)</label>
-          <input className="smk-form-input" type="text" value={icon} onChange={setIcon} placeholder="contoh: graduation, briefcase, book" />
+          <label>Pilih Icon Jurusan</label>
+          <div className="smk-icon-picker" style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
+            gap: 8,
+            maxHeight: 260,
+            overflowY: "auto",
+            padding: 4,
+          }}>
+            {PROGRAM_ICON_OPTIONS.map((opt) => (
+              <button
+                type="button"
+                key={opt.name}
+                className={`smk-icon-option${(icon || "graduation") === opt.name ? " active" : ""}`}
+                onClick={() => setIcon(opt.name)}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                  height: 64,
+                  padding: "6px 4px",
+                }}
+              >
+                <Icon name={opt.name} size={22} />
+                <span style={{ fontSize: 10, lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+                  {opt.label}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
         <div className="smk-form-group">
           <label>Deskripsi</label>
