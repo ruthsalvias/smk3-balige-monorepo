@@ -116,6 +116,12 @@ function PortofolioForm() {
     dataToSend.append('category', formData.category);
     dataToSend.append('skill', formData.skill);
     
+    // Pastikan nama siswa yang terkirim adalah nama lengkap, bukan username / NIS
+    const namaSiswa = user?.nama || user?.name || user?.username || '';
+    if (namaSiswa) {
+      dataToSend.append('studentName', namaSiswa);
+    }
+    
     // Jika ada file baru yang dipilih, masukkan ke FormData
     if (imageFile) {
       dataToSend.append('image', imageFile);
@@ -228,6 +234,35 @@ function PortofolioForm() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
+            {/* Info Pemilik / Siswa */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              padding: '12px 16px', borderRadius: '10px',
+              backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
+            }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '50%',
+                backgroundColor: '#16a34a', color: 'white',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: '15px', flexShrink: 0
+              }}>
+                {(user?.nama || user?.name || user?.username || 'S').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: '#15803d', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Nama Siswa Pembuat Karya
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#166534' }}>
+                  {user?.nama || user?.name || user?.username || 'Siswa'}
+                </div>
+                {user?.username && (
+                  <div style={{ fontSize: '11px', color: '#16a34a' }}>
+                    NIS: {user.username}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Input Judul */}
             <div>
               <label style={labelStyle}>Judul Proyek / Karya <span style={{ color: '#dc2626' }}>*</span></label>

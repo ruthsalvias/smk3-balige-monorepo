@@ -2740,3 +2740,43 @@ html { overflow-x: hidden; }
   }
 }
 
+/* ==========================================================================
+   PORTOFOLIO PAGES (LIST & DETAIL) LAYOUT
+   ========================================================================== */
+.smk-portofolio-page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.smk-portofolio-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.smk-portofolio-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .smk-portofolio-page-container {
+    padding: 24px 16px 48px;
+  }
+  .smk-portofolio-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

@@ -145,6 +145,7 @@ services:
       <<: *database-url
       PORT: ${SERVICE_PORTOFOLIO_PORT}
       INTERNAL_GATEWAY_SECRET: ${INTERNAL_GATEWAY_SECRET}
+      SERVICE_MANAGEMENT_URL: ${SERVICE_MANAGEMENT_URL:-http://service-management:3005}
     volumes:
       - ./uploads/portofolio:/app/uploads/portofolio
     extra_hosts: *extra-hosts

@@ -36,7 +36,7 @@ function PortofolioList() {
   const [page, setPage] = useState(1);
   const [showMine, setShowMine] = useState(false);
 
-  const namaUser = user?.name || user?.username || '';
+  const namaUser = user?.nama || user?.name || user?.username || '';
 
   useEffect(() => {
     const params = {
@@ -65,7 +65,10 @@ function PortofolioList() {
   const isOwner = (portfolio) => {
     if (!isAuth) return false;
     return (
-      portfolio.ownerUsername === user?.username ||
+      (user?.id && portfolio.ownerUserId === user.id) ||
+      (user?.username && portfolio.ownerUsername === user.username) ||
+      (user?.nama && portfolio.studentName === user.nama) ||
+      (user?.name && portfolio.studentName === user.name) ||
       portfolio.studentName === namaUser ||
       portfolio.ownerUsername === namaUser
     );
@@ -202,97 +205,109 @@ function PortofolioList() {
         </div>
 
         {/* Tabel */}
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 6px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-          <div style={{
-            display: 'grid', gridTemplateColumns: '40px 1.8fr 2fr 1.4fr 1.1fr 88px',
-            padding: '12px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e5e7eb',
-            color: '#6b7280', fontSize: '11px', fontWeight: '700',
-            letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'Poppins, sans-serif',
-          }}>
-            <span></span>
-            <span>Nama Siswa</span>
-            <span>Judul Proyek</span>
-            <span>Jurusan</span>
-            <span>Skill</span>
-            <span style={{ textAlign: 'center' }}>Aksi</span>
-          </div>
+        <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 6px rgba(0,0,0,0.07)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: '760px' }}>
+              <div style={{
+                display: 'grid', gridTemplateColumns: '46px 1.8fr 2fr 1.3fr 1.2fr 88px',
+                padding: '12px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e5e7eb',
+                color: '#6b7280', fontSize: '11px', fontWeight: '700',
+                letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'Poppins, sans-serif',
+                alignItems: 'center',
+              }}>
+                <span style={{ textAlign: 'center' }}>No</span>
+                <span>Nama Siswa</span>
+                <span>Judul Proyek</span>
+                <span>Jurusan</span>
+                <span>Skill</span>
+                <span style={{ textAlign: 'center' }}>Aksi</span>
+              </div>
 
-          {loading ? (
-            <LoadingRows />
-          ) : error ? (
-            <EmptyState icon="warning" message={error} />
-          ) : paginated.length === 0 ? (
-            <EmptyState icon="image" message={search || filterJurusan ? 'Tidak ada hasil yang cocok' : 'Belum ada data portofolio'} />
-          ) : (
-            paginated.map((p, i) => (
-              <div
-                key={p.id}
-                style={{
-                  display: 'grid', gridTemplateColumns: '40px 1.8fr 2fr 1.4fr 1.1fr 88px',
-                  padding: '14px 20px',
-                  borderBottom: i < paginated.length - 1 ? '1px solid #f3f4f6' : 'none',
-                  alignItems: 'center', transition: 'background 0.1s', fontFamily: 'Poppins, sans-serif',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fafafa')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <input type="checkbox" style={{ accentColor: '#1f2c5c' }} />
+              {loading ? (
+                <LoadingRows />
+              ) : error ? (
+                <EmptyState icon="warning" message={error} />
+              ) : paginated.length === 0 ? (
+                <EmptyState icon="image" message={search || filterJurusan ? 'Tidak ada hasil yang cocok' : 'Belum ada data portofolio'} />
+              ) : (
+                paginated.map((p, i) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '46px 1.8fr 2fr 1.3fr 1.2fr 88px',
+                      padding: '14px 20px',
+                      borderBottom: i < paginated.length - 1 ? '1px solid #f3f4f6' : 'none',
+                      alignItems: 'center', transition: 'background 0.1s', fontFamily: 'Poppins, sans-serif',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fafafa')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <span style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+                      {(page - 1) * PER_PAGE + i + 1}
+                    </span>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0,
-                    backgroundColor: getColor(p.studentName), color: 'white',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: '700', fontSize: '15px',
-                  }}>
-                    {getInitial(p.studentName)}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '14px', color: '#1a1a2e', cursor: 'pointer' }}
-                      onClick={() => navigate(`/portofolio/${p.id}`)}>
-                      {p.studentName}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
+                        backgroundColor: getColor(p.studentName), color: 'white',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: '700', fontSize: '15px',
+                      }}>
+                        {getInitial(p.studentName)}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: '600', fontSize: '14px', color: '#1a1a2e', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          onClick={() => navigate(`/portofolio/${p.id}`)}>
+                          {p.studentName}
+                        </div>
+                        {p.ownerUsername && p.ownerUsername !== p.studentName && (
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
+                            NIS: {p.ownerUsername}
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    <div style={{ color: '#374151', fontSize: '13px', paddingRight: '12px', lineHeight: '1.4', fontWeight: 500 }}>
+                      {p.title}
+                    </div>
+
                     <div>
                       <span style={{
                         backgroundColor: '#e0e7ff', color: '#3730a3',
-                        padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '500',
+                        padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
                       }}>
                         {p.major || '-'}
                       </span>
                     </div>
+
+                    <div style={{ color: '#475569', fontSize: '12px' }}>
+                      {p.skill ? (
+                        <span style={{
+                          backgroundColor: '#fef3c7', color: '#92400e',
+                          padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600',
+                          display: 'inline-block', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                        }}>
+                          {p.skill}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#94a3b8' }}>-</span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <ActionMenu
+                        canEdit={isOwner(p)}
+                        onView={() => navigate(`/portofolio/${p.id}`)}
+                        onEdit={() => navigate(`/portofolio/edit/${p.id}`)}
+                        onDelete={() => handleDelete(p.id)}
+                      />
+                    </div>
                   </div>
-                </div>
-
-                <div style={{ color: '#374151', fontSize: '13px', paddingRight: '12px', lineHeight: '1.4' }}>
-                  {p.title}
-                </div>
-
-                <div>
-                  <span style={{
-                    backgroundColor: '#e0e7ff', color: '#3730a3',
-                    padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '500',
-                  }}>
-                    {p.major || '-'}
-                  </span>
-                </div>
-
-                <div style={{ color: '#6b7280', fontSize: '12px' }}>
-                  {p.skill
-                    ? p.skill.split(',').slice(0, 2).join(', ') + (p.skill.split(',').length > 2 ? '...' : '')
-                    : '-'}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <ActionMenu
-                    canEdit={isOwner(p)}
-                    onView={() => navigate(`/portofolio/${p.id}`)}
-                    onEdit={() => navigate(`/portofolio/edit/${p.id}`)}
-                    onDelete={() => handleDelete(p.id)}
-                  />
-                </div>
-              </div>
-            ))
-          )}
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Pagination */}
