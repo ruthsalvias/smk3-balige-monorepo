@@ -70,6 +70,8 @@ docker compose down -v            # stop + hapus semua data
 
 ## Pengembangan tanpa Docker
 
+Butuh Node.js 24.
+
 ```bash
 cd frontend && npm install && npm run dev     # http://localhost:5173
 cd backend  && npm install && npm run start:dev api-gateway
