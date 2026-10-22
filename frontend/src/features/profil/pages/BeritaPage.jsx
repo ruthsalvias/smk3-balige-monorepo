@@ -197,12 +197,23 @@ export default function BeritaPage() {
                   <article className="smk-featured-card">
                     <div className="smk-featured-img">
                       {utama.img ? (
-                        <img src={utama.img} alt={utama.title} />
-                      ) : (
-                        <div className="smk-berita-img-placeholder">
-                          {pengaturan.nama_singkat}
-                        </div>
-                      )}
+                        <img
+                          src={utama.img}
+                          alt={utama.title}
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.style.display = "flex";
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="smk-berita-img-placeholder"
+                        style={{ display: utama.img ? "none" : "flex" }}
+                      >
+                        {pengaturan.nama_singkat || "SMK 3"}
+                      </div>
                       <span
                         className="smk-berita-tag"
                         style={{ background: kategoriColors[utama.kategori] }}
@@ -299,12 +310,24 @@ export default function BeritaPage() {
                       >
                         <div className="smk-berita-img">
                           {item.img ? (
-                            <img src={item.img} alt={item.title} />
-                          ) : (
-                            <div className="smk-berita-img-placeholder">
-                              {pengaturan.nama_singkat}
-                            </div>
-                          )}
+                            <img
+                              src={item.img}
+                              alt={item.title}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                if (e.currentTarget.nextElementSibling) {
+                                  e.currentTarget.nextElementSibling.style.display = "flex";
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="smk-berita-img-placeholder"
+                            style={{ display: item.img ? "none" : "flex" }}
+                          >
+                            {pengaturan.nama_singkat || "SMK 3"}
+                          </div>
                           <span
                             className="smk-berita-tag"
                             style={{ background: kategoriColors[item.kategori] }}

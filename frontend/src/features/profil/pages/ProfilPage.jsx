@@ -1,14 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import ProfilLayout from "../layouts/ProfilLayout";
-import foto from "../../../assets/images/foto.png";
 import {
   asyncLoadAllProfilData,
 } from "../states/action";
 import Icon from "../../../components/Icon";
 import Reveal from "../../../components/Reveal";
 import { mediaUrl } from "../../admin/components/AdminComponents";
+import { useSiteSettings } from "../context/SiteSettingsContext";
+import { useHeroSlider } from "../hooks/useHeroSlider";
 
 // Backend menyimpan path relatif (mis. "fasilitas/xxx.png") dan menyajikannya
 // lewat gateway di /api/profile/uploads/*.
@@ -19,6 +20,7 @@ function toImgUrl(path) {
 export default function ProfilPage() {
   const dispatch = useDispatch();
   const { hash } = useLocation();
+  const { pengaturan } = useSiteSettings();
 
   const sejarahIdentitas = useSelector((s) => s.sejarahIdentitas);
   const visiMisi = useSelector((s) => s.visiMisi);
@@ -28,6 +30,13 @@ export default function ProfilPage() {
   const programKeahlian = useSelector((s) => s.programKeahlian);
   const mitraKerjasama = useSelector((s) => s.mitraKerjasama);
   const loading = useSelector((s) => s.profilLoading);
+
+  const heroImages = useMemo(() => {
+    const list = (pengaturan?.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+    return list.length > 0 ? list : ["/hero-fallback.png"];
+  }, [pengaturan?.hero_images]);
+
+  const { current, next, prev, goTo } = useHeroSlider(heroImages);
 
   useEffect(() => {
     dispatch(asyncLoadAllProfilData());
@@ -55,25 +64,97 @@ export default function ProfilPage() {
   return (
     <ProfilLayout>
       {/* ── HERO ── */}
-      <section className="smk-hero">
-        <div className="smk-hero-content">
-          <div className="smk-hero-left">
-            <span className="smk-badge">Tahun Ajaran 2024/2025</span>
+      <section className="smk-beranda-hero">
+        {/* Dynamic blurred & brightened background layer */}
+        {heroImages.length > 0 && (
+          <div
+            className="smk-beranda-hero-bg"
+            style={{ backgroundImage: `url(${heroImages[current] || heroImages[0]})` }}
+          />
+        )}
+        <div className="smk-beranda-hero-inner">
+          <div className="smk-beranda-hero-text">
+            <span className="smk-badge">
+              Tahun Ajaran {pengaturan?.tahun_ajaran || "—"}
+            </span>
             <h1>
-              PROFIL SMK
-              <br />
-              NEGERI 3<br />
-              BALIGE
+              PROFIL<br />
+              <span className="smk-hero-highlight">
+                {pengaturan?.nama_sekolah || "SMK Negeri 3 Balige"}
+              </span>
             </h1>
             <p>
-              Bergabunglah dengan kami dalam menciptakan masa depan yang cerah
-              melalui pendidikan berkualitas, fasilitas modern, dan pengajaran
-              yang inovatif.
+              {pengaturan?.deskripsi_singkat ||
+                "Bergabunglah dengan kami dalam menciptakan masa depan yang cerah melalui pendidikan berkualitas, fasilitas modern, dan pengajaran yang inovatif."}
             </p>
+            <div className="smk-beranda-cta">
+              <a href="#sejarah" className="smk-btn-primary">
+                Sejarah &amp; Identitas
+              </a>
+              <a href="#visi-misi" className="smk-btn-secondary">
+                Visi &amp; Misi
+              </a>
+            </div>
           </div>
-          <div className="smk-hero-right">
-            <img src={foto} alt="Gedung SMK Negeri 3 Balige" />
-          </div>
+
+          {heroImages.length > 0 && (
+            <div className="smk-beranda-hero-img">
+              {/* Carousel Slider */}
+              <div className="smk-hero-carousel">
+                <div className="smk-hero-carousel-slides">
+                  {heroImages.map((src, i) => (
+                    <div
+                      className={`smk-hero-carousel-slide${i === current ? " active" : ""}`}
+                      key={i}
+                    >
+                      <img
+                        src={src}
+                        alt={`${pengaturan?.nama_sekolah || "SMK"} ${i + 1}`}
+                        onError={(e) => {
+                          if (!e.currentTarget.src.includes("hero-fallback.png")) {
+                            e.currentTarget.src = "/hero-fallback.png";
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {heroImages.length > 1 && (
+                  <>
+                    <button
+                      className="smk-hero-carousel-arrow smk-hero-carousel-prev"
+                      onClick={prev}
+                      aria-label="Gambar sebelumnya"
+                      type="button"
+                    >
+                      <Icon name="chevron-left" size={22} />
+                    </button>
+                    <button
+                      className="smk-hero-carousel-arrow smk-hero-carousel-next"
+                      onClick={next}
+                      aria-label="Gambar berikutnya"
+                      type="button"
+                    >
+                      <Icon name="chevron-right" size={22} />
+                    </button>
+
+                    <div className="smk-hero-carousel-dots">
+                      {heroImages.map((_, i) => (
+                        <button
+                          key={i}
+                          className={`smk-hero-carousel-dot${i === current ? " active" : ""}`}
+                          onClick={() => goTo(i)}
+                          aria-label={`Gambar ${i + 1}`}
+                          type="button"
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -238,22 +319,47 @@ export default function ProfilPage() {
         </div>
       </section>
 
-      {/* ── AKREDITASI & PRESTASI ── */}
+      {/* ── PRESTASI SEKOLAH ── */}
       <section className="smk-section" id="prestasi">
         <div className="smk-container smk-center">
-          <h2 className="smk-section-title smk-title-center">
-            Akreditasi &amp; Prestasi
+          <span className="smk-badge smk-badge-outline">Prestasi &amp; Penghargaan</span>
+          <h2 className="smk-section-title smk-title-center" style={{ marginTop: "16px" }}>
+            Prestasi Sekolah
           </h2>
-          <div className="smk-prestasi-block">
+          <p className="smk-section-subtitle">
+            Torehan prestasi dan kejuaraan membanggakan yang diraih oleh siswa serta guru SMK Negeri 3 Balige.
+          </p>
+
+          {/* Prestasi Cards Grid */}
+          <div className="smk-prestasi-grid">
             {prestasi.length > 0 ? (
-              <ul className="smk-prestasi-list">
-                {prestasi.map((item, idx) => (
-                  <li key={item.id}>
-                    {`${idx + 1}. ${item.judul} — ${item.tingkat.charAt(0).toUpperCase() + item.tingkat.slice(1)}, ${item.tahun}`}
-                    {item.keterangan && ` (${item.keterangan})`}
-                  </li>
-                ))}
-              </ul>
+              prestasi.map((item, idx) => {
+                const tingkatKey = (item.tingkat || "").toLowerCase();
+                return (
+                  <Reveal
+                    variant="up"
+                    delay={(idx % 3) * 80}
+                    className={`smk-prestasi-card smk-prestasi-card-${tingkatKey}`}
+                    key={item.id}
+                  >
+                    <div className="smk-prestasi-top">
+                      <span className={`smk-prestasi-badge smk-prestasi-badge-${tingkatKey}`}>
+                        <Icon name="trophy" size={13} />
+                        Tingkat {item.tingkat ? item.tingkat.charAt(0).toUpperCase() + item.tingkat.slice(1) : "Sekolah"}
+                      </span>
+                      {item.tahun && (
+                        <span className="smk-prestasi-year">
+                          <Icon name="calendar" size={13} /> {item.tahun}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="smk-prestasi-title">{item.judul}</h4>
+                    {item.keterangan && (
+                      <p className="smk-prestasi-desc">{item.keterangan}</p>
+                    )}
+                  </Reveal>
+                );
+              })
             ) : (
               <p className="smk-state-text">Data prestasi belum tersedia.</p>
             )}
@@ -301,6 +407,9 @@ export default function ProfilPage() {
           <h2 className="smk-section-title smk-title-center" style={{ marginTop: "16px" }}>
             Mitra Kerjasama
           </h2>
+          <p className="smk-section-subtitle">
+            Sinergi dan kolaborasi strategis bersama dunia usaha &amp; industri.
+          </p>
           <div className="smk-mitra-grid">
             {mitraKerjasama.length > 0 ? (
               mitraKerjasama.map((item, idx) => (
@@ -310,18 +419,19 @@ export default function ProfilPage() {
                   className="smk-mitra-card"
                   key={item.id}
                 >
-                  {item.logo ? (
-                    <img
-                      src={toImgUrl(item.logo)}
-                      alt={item.nama_mitra}
-                      style={{ width: 56, height: 56, objectFit: "contain", marginBottom: 8 }}
-                      onError={(e) => { e.target.style.display = "none"; }}
-                    />
-                  ) : (
-                    <span className="smk-mitra-logo">
-                      <Icon name="handshake" size={26} />
-                    </span>
-                  )}
+                  <div className="smk-mitra-logo-wrap">
+                    {item.logo ? (
+                      <img
+                        src={toImgUrl(item.logo)}
+                        alt={item.nama_mitra}
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    ) : (
+                      <span className="smk-mitra-logo">
+                        <Icon name="handshake" size={24} />
+                      </span>
+                    )}
+                  </div>
                   <span className="smk-mitra-name">{item.nama_mitra}</span>
                 </Reveal>
               ))

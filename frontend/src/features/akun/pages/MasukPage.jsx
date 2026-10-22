@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/context/AuthContext";
+import { useSiteSettings } from "../../profil/context/SiteSettingsContext";
+import { mediaUrl } from "../../admin/components/AdminComponents";
 import { ADMIN_PATH } from "../../../config/adminPath";
 
 function tujuanPeran(roles = []) {
@@ -13,6 +15,7 @@ function tujuanPeran(roles = []) {
 // Satu pintu masuk untuk semua peran; tujuan ditentukan dari role akun.
 export default function MasukPage() {
   const { isAuth, masuk, roles = [] } = useAuth();
+  const { pengaturan } = useSiteSettings();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -41,8 +44,18 @@ export default function MasukPage() {
     }
   };
 
+  const bgImage = pengaturan.login_bg_url ? mediaUrl(pengaturan.login_bg_url) : null;
+
   return (
     <div className="smk-masuk">
+      {/* Background image layer with blur overlay */}
+      {bgImage && (
+        <div
+          className="smk-masuk-bg"
+          style={{ backgroundImage: `url(${bgImage})` }}
+        />
+      )}
+
       <form className="smk-masuk-box" onSubmit={kirim}>
         <h1>Masuk ke Sistem</h1>
         <p>Gunakan akun yang diberikan sekolah. Siswa memakai NIS sebagai username.</p>

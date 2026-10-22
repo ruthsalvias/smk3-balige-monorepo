@@ -6,11 +6,14 @@ import { mediaUrl } from "../../admin/components/AdminComponents";
 import Icon from "../../../components/Icon";
 import { ADMIN_PATH } from "../../../config/adminPath";
 
-const menu = [
+const menu = (isSiswa) => [
   { to: "/", label: "Beranda", end: true },
   { to: "/berita", label: "Berita & Informasi" },
   { to: "/profil", label: "Profil Sekolah", sections: true },
-  { to: "/portofolio", label: "Portofolio" },
+  {
+    to: isSiswa ? "/portofolio/kelola" : "/portofolio",
+    label: "Portofolio",
+  },
 ];
 
 // Sesuai judul besar tiap bagian di halaman Profil Sekolah.
@@ -57,14 +60,35 @@ export default function Navbar() {
 
   return (
     <header className="smk-navbar">
+      {open && (
+        <div
+          className="smk-nav-backdrop"
+          onClick={() => {
+            setOpen(false);
+            setProfilOpen(false);
+          }}
+          aria-hidden="true"
+        />
+      )}
       <div className="smk-nav-inner">
         <NavLink to="/" className="smk-nav-logo">
           <span className="smk-logo-icon">
             {logoSrc ? (
-              <img src={logoSrc} alt="" className="smk-logo-img" />
-            ) : (
+              <img
+                src={logoSrc}
+                alt=""
+                className="smk-logo-img"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  if (e.currentTarget.nextElementSibling) {
+                    e.currentTarget.nextElementSibling.style.display = "inline-flex";
+                  }
+                }}
+              />
+            ) : null}
+            <span style={{ display: logoSrc ? "none" : "inline-flex" }}>
               <Icon name="graduation" size={22} />
-            )}
+            </span>
           </span>
           <span className="smk-logo-text">
             <strong>{pengaturan.nama_sekolah}</strong>
@@ -73,7 +97,7 @@ export default function Navbar() {
         </NavLink>
 
         <nav className={`smk-nav-menu${open ? " open" : ""}`}>
-          {menu.map((item) =>
+          {menu(isSiswa).map((item) =>
             item.sections ? (
               <div
                 key={item.to}

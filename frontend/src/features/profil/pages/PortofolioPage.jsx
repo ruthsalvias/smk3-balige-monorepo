@@ -157,12 +157,24 @@ export default function PortofolioPage() {
                   >
                     <div className="smk-galeri-img">
                       {img ? (
-                        <img src={img} alt={item.title} loading="lazy" />
-                      ) : (
-                        <div className="smk-galeri-placeholder">
-                          <Icon name="image" size={40} />
-                        </div>
-                      )}
+                        <img
+                          src={img}
+                          alt={item.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.style.display = "flex";
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="smk-galeri-placeholder"
+                        style={{ display: img ? "none" : "flex" }}
+                      >
+                        <Icon name="image" size={40} />
+                      </div>
                       {(item.category || item.major) && (
                         <span className="smk-galeri-chip">
                           {item.category || item.major}
@@ -175,22 +187,23 @@ export default function PortofolioPage() {
                       <p className="smk-galeri-desc">{ringkas(item.description)}</p>
                       {skills.length > 0 && (
                         <div className="smk-galeri-skills">
-                          {skills.map((s) => (
-                            <span className="smk-galeri-skill" key={s}>
-                              {s}
-                            </span>
+                          {skills.map((s, i) => (
+                            <span key={i} className="smk-galeri-skill">{s}</span>
                           ))}
                         </div>
                       )}
                     </div>
 
                     <div className="smk-galeri-footer">
-                      <span className="smk-galeri-avatar">
+                      <div className="smk-galeri-avatar">
                         {initial(item.studentName)}
-                      </span>
-                      <span className="smk-galeri-author">
-                        <strong>{item.studentName || "Siswa"}</strong>
-                        <span>{item.major || "Program Keahlian"}</span>
+                      </div>
+                      <div className="smk-galeri-author">
+                        <strong>{item.studentName}</strong>
+                        <span>{item.major || "Siswa"}</span>
+                      </div>
+                      <span className="smk-galeri-more" style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.85rem", fontWeight: 700, color: "var(--p-navy-700)" }}>
+                        Selengkapnya <Icon name="chevron-right" size={16} />
                       </span>
                     </div>
                   </Reveal>

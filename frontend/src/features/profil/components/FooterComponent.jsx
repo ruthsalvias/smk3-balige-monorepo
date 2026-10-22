@@ -70,7 +70,21 @@ export default function Footer() {
           <div className="smk-footer-box smk-footer-about">
             <div className="smk-footer-brand">
               <span className="smk-footer-brand-logo">
-                {logoSrc ? <img src={logoSrc} alt="" /> : <Icon name="graduation" size={24} />}
+                {logoSrc ? (
+                  <img
+                    src={logoSrc}
+                    alt=""
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      if (e.currentTarget.nextElementSibling) {
+                        e.currentTarget.nextElementSibling.style.display = "inline-flex";
+                      }
+                    }}
+                  />
+                ) : null}
+                <span style={{ display: logoSrc ? "none" : "inline-flex" }}>
+                  <Icon name="graduation" size={24} />
+                </span>
               </span>
               <span className="smk-footer-brand-text">
                 <strong>{pengaturan.nama_sekolah}</strong>
@@ -147,8 +161,14 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="smk-footer-bottom">
-          <p>
-            © {new Date().getFullYear()} {pengaturan.nama_sekolah}. Seluruh hak cipta dilindungi.
+          <p className="smk-footer-bottom-title">
+            Sistem Informasi {pengaturan.nama_sekolah || "SMK Negeri 3 Balige"}
+          </p>
+          <p className="smk-footer-bottom-dev">
+            Dikembangkan oleh Program Studi S1 Informatika, Institut Teknologi Del
+          </p>
+          <p className="smk-footer-bottom-copy">
+            © {new Date().getFullYear()}. Hak Cipta Dilindungi.
           </p>
         </div>
       </div>

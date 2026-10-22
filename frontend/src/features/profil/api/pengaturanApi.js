@@ -22,14 +22,20 @@ export async function getPengaturan() {
 /**
  * @param {object} payload field pengaturan
  * @param {File|null} logoFile file logo opsional
+ * @param {File[]|null} heroFiles file hero images opsional (multiple)
+ * @param {File|null} loginBgFile file login background opsional
  */
-export async function putPengaturan(payload, logoFile) {
+export async function putPengaturan(payload, logoFile, heroFiles, loginBgFile) {
   const form = new FormData();
   Object.entries(payload).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
     form.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
   });
   if (logoFile) form.append("logo", logoFile);
+  if (heroFiles && heroFiles.length > 0) {
+    heroFiles.forEach((file) => form.append("hero_images", file));
+  }
+  if (loginBgFile) form.append("login_bg", loginBgFile);
 
   return handle(
     await apiHelper.fetchData(`${BASE_URL}/pengaturan-sekolah`, { method: "PUT", body: form })

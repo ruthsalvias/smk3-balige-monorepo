@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Op } from 'sequelize';
 import { CreateSuratDto } from './dto/create-surat.dto';
 import { UpdateSuratDto } from './dto/update-surat.dto';
@@ -6,6 +6,7 @@ import SiswaModel from '../../models/SiswaModel';
 import GuruModel from '../../models/GuruModel';
 import SuratPanggilanModel, { SuratStatus } from '../../models/SuratPanggilanModel';
 import { buildSuratPanggilanPdf } from '../../templates/surat-panggilan.pdf';
+import { MasterSyncService } from '../master-sync/master-sync.service';
 
 const PROFIL_SEKOLAH = {
     nama: process.env.SEKOLAH_NAMA || 'SMK Negeri 3 Balige',
@@ -27,6 +28,10 @@ type SuratActor = {
 
 @Injectable()
 export class SuratPanggilanService {
+    constructor(
+        @Optional() private readonly masterSyncService?: MasterSyncService
+    ) {}
+
     private actorId(actor?: SuratActor) {
         return actor?.userId || actor?.username || null;
     }
@@ -66,14 +71,22 @@ export class SuratPanggilanService {
     }
 
     async getMasterSiswa() {
+        const count = await SiswaModel.count();
+        if (count === 0 && this.masterSyncService) {
+            await this.masterSyncService.sinkronkanSemua();
+        }
         const data = await SiswaModel.findAll({
-            attributes: ['id', 'nama', 'kelas', 'no_wa_ortu'],
+            attributes: ['id', 'nama', 'kelas', 'no_wa_ortu', 'nis'],
             order: [['nama', 'ASC']],
         });
         return { status: 'success', data };
     }
 
     async getMasterGuru() {
+        const count = await GuruModel.count();
+        if (count === 0 && this.masterSyncService) {
+            await this.masterSyncService.sinkronkanSemua();
+        }
         const data = await GuruModel.findAll({
             attributes: ['id', 'nama', 'jabatan', 'nip'],
             order: [['nama', 'ASC']],

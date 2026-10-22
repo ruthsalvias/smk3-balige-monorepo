@@ -4,8 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GatewayInternalGuard } from '@app/common';
 import { Guru } from './models/GuruModel';
 import { Siswa } from './models/SiswaModel';
+import { SklFolder } from './models/SklFolderModel';
+import { SklFile } from './models/SklFileModel';
 import { GuruModule } from './modules/guru/guru.module';
 import { SiswaModule } from './modules/siswa/siswa.module';
+import { SklModule } from './modules/skl/skl.module';
 
 const databaseUrl =
   process.env.DATABASE_URL || process.env.DB_MANAGEMENT_URL;
@@ -19,11 +22,12 @@ if (!databaseUrl) {
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: databaseUrl,
-      entities: [Guru, Siswa],
+      entities: [Guru, Siswa, SklFolder, SklFile],
       synchronize: true, // Matikan atau ganti false jika di production (gunakan migrasi)
     }),
     GuruModule,
     SiswaModule,
+    SklModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: GatewayInternalGuard }],
 })

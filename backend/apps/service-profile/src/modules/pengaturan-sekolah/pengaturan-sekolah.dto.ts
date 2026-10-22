@@ -70,4 +70,13 @@ export class UpdatePengaturanSekolahDto {
   @ValidateNested({ each: true })
   @Type(() => SosialMediaDto)
   sosial_media?: SosialMediaDto[];
+
+  @IsOptional()
+  @parseJsonArray()
+  @IsArray()
+  hero_images?: string[];
+
+  @IsOptional()
+  @IsString()
+  login_bg_url?: string;
 }

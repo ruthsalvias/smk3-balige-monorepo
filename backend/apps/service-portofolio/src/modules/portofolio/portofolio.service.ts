@@ -65,10 +65,39 @@ export class PortofolioService {
 
     // --- CRUD Transaksi ---
 
+    private async resolveStudentName(candidateName?: string, username?: string): Promise<string> {
+        let name = (candidateName || '').trim();
+        if (name && name !== username) {
+            return name;
+        }
+
+        if (username) {
+            try {
+                const managementUrl = process.env.SERVICE_MANAGEMENT_URL || 'http://service-management:3005';
+                const secret = process.env.INTERNAL_GATEWAY_SECRET || '';
+                const res = await fetch(`${managementUrl.replace(/\/+$/, '')}/api/siswa/search?q=${encodeURIComponent(username)}`, {
+                    headers: { 'x-gateway-secret': secret },
+                });
+                if (res.ok) {
+                    const json = (await res.json()) as any;
+                    const list = json?.data?.siswa || [];
+                    const found = list.find((s: any) => s.nis === username || s.nisn === username);
+                    if (found?.namaLengkap) {
+                        return found.namaLengkap;
+                    }
+                }
+            } catch {
+                // abaikan jika gagal lookup
+            }
+        }
+
+        return name || username || '';
+    }
+
    // 1. Tambah Portofolio (Khusus Siswa / Logged-in User)
     async create(payload: CreatePortfolioDto, actor: PortfolioActor, imagePath?: string) {
         const user = this.requireActor(actor);
-        const studentName = payload.studentName || user.username || '';
+        const studentName = await this.resolveStudentName(payload.studentName, user.username);
 
         const dataBaru = await PortofolioModel.create({
             title: payload.title,
@@ -90,6 +119,54 @@ export class PortofolioService {
         };
     }
 
+    private async enrichStudentNames(rows: any[]): Promise<any[]> {
+        const needsLookup = rows.filter((r) => {
+            const row = typeof r?.get === 'function' ? r.get({ plain: true }) : r;
+            const sName = (row?.studentName || '').trim();
+            const uName = (row?.ownerUsername || '').trim();
+            return !sName || sName === uName;
+        });
+
+        if (needsLookup.length === 0) return rows;
+
+        try {
+            const managementUrl = process.env.SERVICE_MANAGEMENT_URL || 'http://service-management:3005';
+            const secret = process.env.INTERNAL_GATEWAY_SECRET || '';
+            const res = await fetch(`${managementUrl.replace(/\/+$/, '')}/api/siswa?limit=200`, {
+                headers: { 'x-gateway-secret': secret },
+            });
+            if (res.ok) {
+                const json = (await res.json()) as any;
+                const siswaList = json?.data?.siswa || [];
+                const mapByNis = new Map<string, string>();
+                for (const s of siswaList) {
+                    if (s.nis) mapByNis.set(s.nis, s.namaLengkap);
+                    if (s.nisn) mapByNis.set(s.nisn, s.namaLengkap);
+                }
+                for (const r of rows) {
+                    const row = typeof r?.get === 'function' ? r.get({ plain: true }) : r;
+                    const sName = (row?.studentName || '').trim();
+                    const uName = (row?.ownerUsername || '').trim();
+                    if (!sName || sName === uName) {
+                        const realName = mapByNis.get(uName);
+                        if (realName) {
+                            if (typeof r.setDataValue === 'function') {
+                                r.setDataValue('studentName', realName);
+                            } else {
+                                r.studentName = realName;
+                            }
+                            PortofolioModel.update({ studentName: realName }, { where: { id: row.id } }).catch(() => {});
+                        }
+                    }
+                }
+            }
+        } catch {
+            // abaikan jika lookup gagal
+        }
+
+        return rows;
+    }
+
     // 2. Public: Lihat Semua Portofolio (Dengan Filter & Pagination)
     async findAll(query: QueryPortfolioDto = {}) {
         const page = Math.max(Number(query.page ?? 1), 1);
@@ -102,9 +179,11 @@ export class PortofolioService {
             limit,
         });
 
+        const enriched = await this.enrichStudentNames(rows);
+
         return {
             status: 'success',
-            data: rows.map((item) => this.normalizeRow(item)),
+            data: enriched.map((item) => this.normalizeRow(item)),
             meta: { total: count, page, limit, totalPages: Math.ceil(count / limit) },
         };
     }
@@ -127,9 +206,11 @@ export class PortofolioService {
             limit,
         });
 
+        const enriched = await this.enrichStudentNames(rows);
+
         return {
             status: 'success',
-            data: rows.map((item) => this.normalizeRow(item)),
+            data: enriched.map((item) => this.normalizeRow(item)),
             meta: { total: count, page, limit, totalPages: Math.ceil(count / limit) },
         };
     }
@@ -140,6 +221,8 @@ export class PortofolioService {
         if (!data) {
             throw new NotFoundException(`Portofolio dengan ID ${id} tidak ditemukan`);
         }
+
+        await this.enrichStudentNames([data]);
 
         return {
             status: 'success',

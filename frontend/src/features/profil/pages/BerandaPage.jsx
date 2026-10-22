@@ -2,11 +2,11 @@ import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import ProfilLayout from "../layouts/ProfilLayout";
-import foto from "../../../assets/images/foto.png";
-import { beritaMediaUrl } from "../../admin/components/AdminComponents";
+import { beritaMediaUrl, mediaUrl } from "../../admin/components/AdminComponents";
 import { asyncGetPrestasi, asyncGetProgramKeahlian, asyncGetMitraKerjasama } from "../states/action";
 import { asyncLoadAllBeritaData } from "../../berita/states/action";
 import { useSiteSettings } from "../context/SiteSettingsContext";
+import { useHeroSlider } from "../hooks/useHeroSlider";
 import Icon from "../../../components/Icon";
 import Reveal from "../../../components/Reveal";
 
@@ -39,6 +39,14 @@ export default function BerandaPage() {
   const berita = useSelector((s) => s.berita || []);
   const agenda = useSelector((s) => s.agenda || []);
   const pengumuman = useSelector((s) => s.pengumuman || []);
+
+  // Build hero images array: use DB images dynamically with resilient fallback
+  const heroImages = useMemo(() => {
+    const list = (pengaturan?.hero_images || []).map((p) => mediaUrl(p)).filter(Boolean);
+    return list.length > 0 ? list : ["/hero-fallback.png"];
+  }, [pengaturan?.hero_images]);
+
+  const { current, next, prev, goTo } = useHeroSlider(heroImages);
 
   useEffect(() => {
     dispatch(asyncGetPrestasi());
@@ -97,17 +105,24 @@ export default function BerandaPage() {
     <ProfilLayout>
       {/* HERO */}
       <section className="smk-beranda-hero">
+        {/* Blurred background layer */}
+        {heroImages.length > 0 && (
+          <div
+            className="smk-beranda-hero-bg"
+            style={{ backgroundImage: `url(${heroImages[current] || heroImages[0]})` }}
+          />
+        )}
         <div className="smk-beranda-hero-inner">
           <div className="smk-beranda-hero-text">
             <span className="smk-badge">
-              Tahun Ajaran {pengaturan.tahun_ajaran || "—"}
+              Tahun Ajaran {pengaturan?.tahun_ajaran || "—"}
             </span>
             <h1>
               WEBSITE RESMI<br />
-              <span className="smk-hero-highlight">{pengaturan.nama_sekolah}</span>
+              <span className="smk-hero-highlight">{pengaturan?.nama_sekolah || "SMK Negeri 3 Balige"}</span>
             </h1>
             <p>
-              {pengaturan.deskripsi_singkat ||
+              {pengaturan?.deskripsi_singkat ||
                 "Mencetak lulusan yang kompeten, berkarakter, dan siap bersaing di dunia industri melalui pembelajaran berbasis praktik."}
             </p>
             <div className="smk-beranda-cta">
@@ -115,9 +130,64 @@ export default function BerandaPage() {
               <NavLink to="/portofolio" className="smk-btn-secondary">Lihat Portofolio</NavLink>
             </div>
           </div>
-          <div className="smk-beranda-hero-img">
-            <img src={foto} alt={pengaturan.nama_sekolah} />
+          {heroImages.length > 0 && (
+            <div className="smk-beranda-hero-img">
+              {/* Carousel Slider */}
+              <div className="smk-hero-carousel">
+                <div className="smk-hero-carousel-slides">
+                  {heroImages.map((src, i) => (
+                    <div
+                      className={`smk-hero-carousel-slide${i === current ? " active" : ""}`}
+                      key={i}
+                    >
+                      <img
+                        src={src}
+                        alt={`${pengaturan?.nama_sekolah || "SMK"} ${i + 1}`}
+                        onError={(e) => {
+                          if (!e.currentTarget.src.includes("hero-fallback.png")) {
+                            e.currentTarget.src = "/hero-fallback.png";
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+              {heroImages.length > 1 && (
+                <>
+                  <button
+                    className="smk-hero-carousel-arrow smk-hero-carousel-prev"
+                    onClick={prev}
+                    aria-label="Gambar sebelumnya"
+                    type="button"
+                  >
+                    <Icon name="chevron-left" size={22} />
+                  </button>
+                  <button
+                    className="smk-hero-carousel-arrow smk-hero-carousel-next"
+                    onClick={next}
+                    aria-label="Gambar berikutnya"
+                    type="button"
+                  >
+                    <Icon name="chevron-right" size={22} />
+                  </button>
+
+                  <div className="smk-hero-carousel-dots">
+                    {heroImages.map((_, i) => (
+                      <button
+                        key={i}
+                        className={`smk-hero-carousel-dot${i === current ? " active" : ""}`}
+                        onClick={() => goTo(i)}
+                        aria-label={`Gambar ${i + 1}`}
+                        type="button"
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+        )}
         </div>
       </section>
 
@@ -172,12 +242,23 @@ export default function BerandaPage() {
                     <article className="smk-featured-card">
                       <div className="smk-featured-img">
                         {kabarUtama.img ? (
-                          <img src={kabarUtama.img} alt={kabarUtama.title} />
-                        ) : (
-                          <div className="smk-berita-img-placeholder">
-                            {pengaturan.nama_singkat}
-                          </div>
-                        )}
+                          <img
+                            src={kabarUtama.img}
+                            alt={kabarUtama.title}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                              if (e.currentTarget.nextElementSibling) {
+                                e.currentTarget.nextElementSibling.style.display = "flex";
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="smk-berita-img-placeholder"
+                          style={{ display: kabarUtama.img ? "none" : "flex" }}
+                        >
+                          {pengaturan.nama_singkat || "SMK 3"}
+                        </div>
                         <span
                           className="smk-berita-tag"
                           style={{ background: kategoriColors[kabarUtama.tag] }}
@@ -252,12 +333,24 @@ export default function BerandaPage() {
                       >
                         <div className="smk-berita-img">
                           {item.img ? (
-                            <img src={item.img} alt={item.title} />
-                          ) : (
-                            <div className="smk-berita-img-placeholder">
-                              {pengaturan.nama_singkat}
-                            </div>
-                          )}
+                            <img
+                              src={item.img}
+                              alt={item.title}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                if (e.currentTarget.nextElementSibling) {
+                                  e.currentTarget.nextElementSibling.style.display = "flex";
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="smk-berita-img-placeholder"
+                            style={{ display: item.img ? "none" : "flex" }}
+                          >
+                            {pengaturan.nama_singkat || "SMK 3"}
+                          </div>
                           <span
                             className="smk-berita-tag"
                             style={{ background: kategoriColors[item.tag] }}

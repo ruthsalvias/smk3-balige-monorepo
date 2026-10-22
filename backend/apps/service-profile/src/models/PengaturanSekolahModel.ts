@@ -18,6 +18,10 @@ const PengaturanSekolahModel = dbProfile.define(
     jam_operasional: { type: DataTypes.TEXT, allowNull: true },
     // [{ platform: "instagram", url: "https://..." }]
     sosial_media: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+    // Array of image paths for hero slider: ["pengaturan/hero-xxx.jpg", ...]
+    hero_images: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+    // Background image for login page
+    login_bg_url: { type: DataTypes.STRING, allowNull: true },
   },
   {
     freezeTableName: true,

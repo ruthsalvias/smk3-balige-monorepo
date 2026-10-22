@@ -22,6 +22,7 @@ import { AdminFasilitasPage, AdminPrestasiPage, AdminMitraPage } from "./feature
 import AdminPengaturanPage from "./features/admin/pages/AdminPengaturanPage";
 import AdminStatistikPage from "./features/admin/pages/AdminStatistikPage";
 import AdminAkunPage from "./features/admin/pages/AdminAkunPage";
+import AdminSklPage from "./features/admin/pages/AdminSklPage";
 
 //manajemen data
 import DataSiswaPage from "./features/manajemen-data/pages/DataSiswaPage";
@@ -74,6 +75,7 @@ function App() {
         <Route path={`${ADMIN_PATH}/statistik`} element={<AdminStatistikPage />} />
         <Route path={`${ADMIN_PATH}/pelanggaran`} element={<AdminPelanggaranPage />} />
         <Route path={`${ADMIN_PATH}/akun`} element={<AdminAkunPage />} />
+        <Route path={`${ADMIN_PATH}/skl`} element={<AdminSklPage />} />
 
         {/*Manajemen Data*/}
         <Route path={`${ADMIN_PATH}/data/siswa`} element={<DataSiswaPage/>} />
