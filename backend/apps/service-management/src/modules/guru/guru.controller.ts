@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -17,6 +19,7 @@ import type { Response } from 'express';
 import { GuruService } from './guru.service';
 import { CreateGuruDto } from './dto/create-guru.dto';
 import { UpdateGuruDto } from './dto/update-guru.dto';
+import { HapusMassalDto } from '../../common/hapus-massal.dto';
 import { memoryUploadOptions } from '../../common/upload.util';
 
 @Controller('guru')
@@ -64,6 +67,13 @@ export class GuruController {
   import(@UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('File Excel wajib diunggah');
     return this.guruService.importFromBuffer(file.buffer);
+  }
+
+  /** Harus di atas route ':id' agar 'hapus-massal' tidak dibaca sebagai ID. */
+  @Post('hapus-massal')
+  @HttpCode(HttpStatus.OK)
+  hapusMassal(@Body() dto: HapusMassalDto) {
+    return this.guruService.hapusMassal(dto.ids);
   }
 
   @Get(':id')

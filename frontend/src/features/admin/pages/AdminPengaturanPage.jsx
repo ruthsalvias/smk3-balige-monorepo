@@ -5,6 +5,7 @@ import { mediaUrl } from "../components/AdminComponents";
 import { getPengaturan, putPengaturan } from "../../profil/api/pengaturanApi";
 import { useSiteSettings } from "../../profil/context/SiteSettingsContext";
 import { showConfirmDialog, showErrorDialog, showSuccessDialog } from "../../../helpers/toolsHelper";
+import { validasiDanSiapkanGambar } from "../../../helpers/gambarHelper";
 
 const PLATFORMS = [
   { value: "facebook", label: "Facebook" },
@@ -81,7 +82,19 @@ export default function AdminPengaturanPage() {
 
   const onChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
-  const onLogo = (file) => {
+  /** Gambar besar dikecilkan dulu supaya tidak ditolak batas ukuran reverse proxy. */
+  const siapkan = async (berkas) => {
+    const { file, pesan } = await validasiDanSiapkanGambar(berkas);
+    if (pesan) {
+      showErrorDialog(pesan);
+      return null;
+    }
+    return file;
+  };
+
+  const onLogo = async (berkas) => {
+    if (!berkas) return;
+    const file = await siapkan(berkas);
     if (!file) return;
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
@@ -93,10 +106,15 @@ export default function AdminPengaturanPage() {
   const removeSosial = (index) => setSosial((prev) => prev.filter((_, i) => i !== index));
 
   // Hero image handlers
-  const addHeroFiles = (files) => {
-    const arr = Array.from(files);
-    setHeroNewFiles((p) => [...p, ...arr]);
-    setHeroNewPreviews((p) => [...p, ...arr.map((f) => URL.createObjectURL(f))]);
+  const addHeroFiles = async (files) => {
+    const disiapkan = [];
+    for (const berkas of Array.from(files || [])) {
+      const file = await siapkan(berkas);
+      if (file) disiapkan.push(file);
+    }
+    if (disiapkan.length === 0) return;
+    setHeroNewFiles((p) => [...p, ...disiapkan]);
+    setHeroNewPreviews((p) => [...p, ...disiapkan.map((f) => URL.createObjectURL(f))]);
   };
 
   const removeExistingHero = async (index) => {
@@ -166,7 +184,9 @@ export default function AdminPengaturanPage() {
   };
 
   // Login bg handlers
-  const onLoginBg = (file) => {
+  const onLoginBg = async (berkas) => {
+    if (!berkas) return;
+    const file = await siapkan(berkas);
     if (!file) return;
     setLoginBgFile(file);
     setLoginBgPreview(URL.createObjectURL(file));

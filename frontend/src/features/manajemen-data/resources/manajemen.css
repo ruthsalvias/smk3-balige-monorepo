@@ -234,8 +234,7 @@
 
 .modern-table {
   width: 100%;
-  min-width: 0;
-  table-layout: fixed;
+  table-layout: auto;
   border-collapse: collapse;
   font-size: 12.5px;
 }
@@ -268,6 +267,12 @@
 
 .modern-table tbody tr:hover {
   background: #f9fafb;
+}
+
+/* Baris yang sedang dipilih untuk penghapusan massal */
+.modern-table tbody tr.baris-terpilih,
+.modern-table tbody tr.baris-terpilih:hover {
+  background: #eff6ff;
 }
 
 /* Nama kolom */
@@ -309,54 +314,56 @@
 
 /* =====================
    LEBAR KOLOM TABEL
-   Kolom panjang (Tanggal Lahir / Alamat) disembunyikan pada layar biasa
-   supaya seluruh tabel muat tanpa geser samping. Data lengkapnya tetap
-   bisa dilihat lewat tombol "Detail". Pada layar lebar kolom itu muncul lagi.
+   Lebar kolom mengikuti isinya (table-layout: auto) dan tabel diberi lebar
+   minimum, sehingga pada layar sempit tabel digeser ke samping — bukan
+   kolomnya yang diperas sampai judulnya patah per huruf.
+
+   Penataan memakai nama kelas, bukan urutan kolom (:nth-child), supaya
+   menambah atau memindahkan kolom tidak lagi merusak lebar kolom lain.
    ===================== */
-.table-siswa th:nth-child(7),  .table-siswa td:nth-child(7),
-.table-siswa th:nth-child(8),  .table-siswa td:nth-child(8) { display: none; }
 
-.table-siswa th:nth-child(1),  .table-siswa td:nth-child(1)  { width: 5%; white-space: nowrap; }
-.table-siswa th:nth-child(2),  .table-siswa td:nth-child(2)  { width: 10%; }
-.table-siswa th:nth-child(3),  .table-siswa td:nth-child(3)  { width: 9%; }
-.table-siswa th:nth-child(4),  .table-siswa td:nth-child(4)  { width: 22%; }
-.table-siswa th:nth-child(5),  .table-siswa td:nth-child(5)  { width: 12%; }
-.table-siswa th:nth-child(6),  .table-siswa td:nth-child(6)  { width: 14%; }
-.table-siswa th:nth-child(9),  .table-siswa td:nth-child(9)  { width: 13%; }
-.table-siswa th:nth-child(10), .table-siswa td:nth-child(10) { width: 9%; }
-.table-siswa th:nth-child(11), .table-siswa td:nth-child(11) { width: 6%; }
+/* Judul kolom tidak pernah dipatah jadi beberapa baris. */
+.modern-table th { white-space: nowrap; }
 
-.table-guru th:nth-child(8), .table-guru td:nth-child(8) { display: none; }
+/* Kolom yang menyusut mengikuti isinya, dengan ruang minimum supaya
+   isinya tidak terhimpit di tepi sel. */
+.modern-table .kolom-pilih,
+.modern-table .kolom-no,
+.modern-table .kolom-aksi,
+.modern-table .aksi {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
 
-.table-guru th:nth-child(1), .table-guru td:nth-child(1) { width: 5%; white-space: nowrap; }
-.table-guru th:nth-child(2), .table-guru td:nth-child(2) { width: 16%; }
-.table-guru th:nth-child(3), .table-guru td:nth-child(3) { width: 22%; }
-.table-guru th:nth-child(4), .table-guru td:nth-child(4) { width: 15%; }
-.table-guru th:nth-child(5), .table-guru td:nth-child(5) { width: 16%; }
-.table-guru th:nth-child(6), .table-guru td:nth-child(6) { width: 12%; }
-.table-guru th:nth-child(7), .table-guru td:nth-child(7) { width: 8%; }
-.table-guru th:nth-child(9), .table-guru td:nth-child(9) { width: 6%; }
+.modern-table .kolom-pilih { min-width: 42px; }
+.modern-table .kolom-no    { min-width: 46px; }
+.modern-table .kolom-aksi,
+.modern-table .aksi        { min-width: 58px; }
 
-/* Layar lebar: semua kolom ditampilkan */
+/* Kolom teks panjang boleh membungkus, dengan batas lebar agar tidak dominan. */
+.modern-table .kolom-teks {
+  white-space: normal;
+  min-width: 140px;
+  max-width: 230px;
+}
+
+.modern-table td.nama {
+  white-space: normal;
+  min-width: 150px;
+}
+
+/* Kolom pelengkap disembunyikan di layar biasa supaya tabel muat tanpa
+   digeser; isinya tetap bisa dilihat lewat tombol "Detail". */
+.modern-table .kolom-opsional { display: none; }
+
+.table-siswa { min-width: 980px; }
+.table-guru  { min-width: 900px; }
+
 @media (min-width: 1500px) {
-  .table-siswa th:nth-child(7),  .table-siswa td:nth-child(7)  { display: table-cell; width: 7%; }
-  .table-siswa th:nth-child(8),  .table-siswa td:nth-child(8)  { display: table-cell; width: 12%; }
-  .table-siswa th:nth-child(2),  .table-siswa td:nth-child(2)  { width: 8%; }
-  .table-siswa th:nth-child(3),  .table-siswa td:nth-child(3)  { width: 7%; }
-  .table-siswa th:nth-child(4),  .table-siswa td:nth-child(4)  { width: 17%; }
-  .table-siswa th:nth-child(5),  .table-siswa td:nth-child(5)  { width: 8%; }
-  .table-siswa th:nth-child(6),  .table-siswa td:nth-child(6)  { width: 9%; }
-  .table-siswa th:nth-child(9),  .table-siswa td:nth-child(9)  { width: 11%; }
-  .table-siswa th:nth-child(10), .table-siswa td:nth-child(10) { width: 8%; }
-  .table-siswa th:nth-child(11), .table-siswa td:nth-child(11) { width: 6%; }
-
-  .table-guru th:nth-child(8), .table-guru td:nth-child(8) { display: table-cell; width: 14%; }
-  .table-guru th:nth-child(2), .table-guru td:nth-child(2) { width: 14%; }
-  .table-guru th:nth-child(3), .table-guru td:nth-child(3) { width: 15%; }
-  .table-guru th:nth-child(4), .table-guru td:nth-child(4) { width: 13%; }
-  .table-guru th:nth-child(5), .table-guru td:nth-child(5) { width: 13%; }
-  .table-guru th:nth-child(6), .table-guru td:nth-child(6) { width: 11%; }
-  .table-guru th:nth-child(9), .table-guru td:nth-child(9) { width: 6%; }
+  .modern-table .kolom-opsional { display: table-cell; }
+  .table-siswa { min-width: 1240px; }
+  .table-guru  { min-width: 1060px; }
 }
 
 .modern-table .badge {
@@ -364,11 +371,6 @@
   font-size: 11.5px;
   min-width: 0;
   white-space: nowrap;
-}
-
-@media (max-width: 700px) {
-  /* Layar ponsel tetap boleh digeser agar isi kolom tidak terlalu terhimpit */
-  .modern-table { table-layout: auto; min-width: 760px; }
 }
 
 /* =====================

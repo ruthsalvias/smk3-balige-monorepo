@@ -27,6 +27,12 @@ export async function ubahStatusAkun(id, aktif) {
   return res.data;
 }
 
+/** Menghapus banyak akun sekaligus — pasangan dari pembuatan akun massal. */
+export async function hapusAkunMassal(ids) {
+  const res = await apiGateway.post(`${PREFIX}/hapus-massal`, { ids });
+  return res.data?.data ?? res.data;
+}
+
 export async function hapusAkun(id) {
   const res = await apiGateway.delete(`${PREFIX}/${id}`);
   return res.data;
