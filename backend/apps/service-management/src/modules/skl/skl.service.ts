@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, In, IsNull } from 'typeorm';
+import { Repository, ILike, In, IsNull } from 'typeorm';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { SklFolder } from '../../models/SklFolderModel';
@@ -293,7 +293,7 @@ export class SklService {
 
     const folderConditions: any[] = [];
     if (queryStr) {
-      folderConditions.push({ nama: Like(`%${queryStr}%`) });
+      folderConditions.push({ nama: ILike(`%${queryStr}%`) });
     }
 
     const folders =
@@ -303,7 +303,7 @@ export class SklService {
 
     const fileWhere: any = {};
     if (queryStr) {
-      fileWhere.namaFile = Like(`%${queryStr}%`);
+      fileWhere.namaFile = ILike(`%${queryStr}%`);
     }
     if (tahunLulus) {
       fileWhere.tahunLulus = tahunLulus;

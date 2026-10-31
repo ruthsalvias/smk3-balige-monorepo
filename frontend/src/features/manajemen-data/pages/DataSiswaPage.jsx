@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { adminPath } from "../../../config/adminPath";
@@ -6,6 +6,7 @@ import {
   asyncGetSiswa,
   asyncGetStatsSiswa,
   asyncDeleteSiswa,
+  asyncCariSiswa,
 } from "../states/action";
 import manajemenApi from "../api/manajemenApi.js";
 import { showSuccessDialog, showErrorDialog } from "../../../helpers/toolsHelper";
@@ -15,6 +16,11 @@ import DetailModal from "../components/DetailModal.jsx";
 import RowActionMenu from "../components/RowActionMenu.jsx";
 import Icon from "../../../components/Icon";
 import DaftarDokumen from "../../../components/DaftarDokumen";
+import KonfirmasiHapusMassal, {
+  BilahPilihan,
+  KotakPilih,
+  KotakPilihSemua,
+} from "../../../components/HapusMassal";
 import {
   JENIS_DOKUMEN,
   kelompokkanDokumen,
@@ -26,7 +32,9 @@ export default function DataSiswaPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const siswa  = useSelector((s) => s.siswa)        ?? [];
+  // Dibungkus useMemo agar identitasnya stabil saat dipakai sebagai dependensi efek.
+  const siswaStore = useSelector((s) => s.siswa);
+  const siswa  = useMemo(() => siswaStore ?? [], [siswaStore]);
   const stats  = useSelector((s) => s.statsSiswa);
   const hasMore = useSelector((s) => s.hasMoreSiswa);
 
@@ -41,16 +49,63 @@ export default function DataSiswaPage() {
   const perPage     = 20;
   const currentPage = Math.floor(offset / perPage) + 1;
 
-  // Fetch data saat offset berubah
+  // Saat ada kata kunci atau filter, data diambil lewat endpoint pencarian
+  // sehingga seluruh data siswa ikut tercakup — bukan hanya halaman aktif.
+  const kataKunci = search.trim();
+  const modePencarian = Boolean(kataKunci || filterKelas || filterJurusan);
+
+  const [opsiKelas, setOpsiKelas] = useState([]);
+  const [opsiJurusan, setOpsiJurusan] = useState([]);
+
+  // Dinaikkan setelah hapus/impor agar daftar dimuat ulang dengan kueri yang
+  // sedang aktif — hasil pencarian tetap bertahan, tidak lompat ke halaman 1.
+  const [versiData, setVersiData] = useState(0);
+  const muatUlang = () => setVersiData((v) => v + 1);
+
+  const [terpilih, setTerpilih] = useState(() => new Set());
+  const [modalMassal, setModalMassal] = useState(false);
+  const [menghapusMassal, setMenghapusMassal] = useState(false);
+
   useEffect(() => {
-    dispatch(asyncGetSiswa(offset, perPage));
     dispatch(asyncGetStatsSiswa());
-  }, [dispatch, offset]);
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!modePencarian) {
+      dispatch(asyncGetSiswa(offset, perPage));
+      return undefined;
+    }
+
+    // Tunggu pengetikan berhenti sejenak supaya tidak memanggil API tiap huruf.
+    const timer = setTimeout(() => {
+      dispatch(
+        asyncCariSiswa({ q: kataKunci, kelas: filterKelas, jurusan: filterJurusan }),
+      );
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [dispatch, offset, modePencarian, kataKunci, filterKelas, filterJurusan, versiData]);
 
   // Reset ke halaman 1 saat filter berubah
   useEffect(() => {
     setOffset(0);
   }, [search, filterKelas, filterJurusan]);
+
+  // Pilihan dropdown dikumpulkan dari seluruh data yang pernah dimuat agar
+  // tidak ikut menyusut saat hasil pencarian hanya memuat sebagian kelas.
+  useEffect(() => {
+    const gabung = (sebelumnya, nilaiBaru) => {
+      const gabungan = Array.from(new Set([...sebelumnya, ...nilaiBaru])).sort();
+      return gabungan.length === sebelumnya.length ? sebelumnya : gabungan;
+    };
+    setOpsiKelas((prev) => gabung(prev, siswa.map((s) => s.kelas).filter(Boolean)));
+    setOpsiJurusan((prev) => gabung(prev, siswa.map((s) => s.jurusan).filter(Boolean)));
+  }, [siswa]);
+
+  // Pilihan dikosongkan setiap kumpulan data berganti supaya tidak ada baris
+  // tak terlihat yang ikut terhapus.
+  useEffect(() => {
+    setTerpilih(new Set());
+  }, [siswa]);
 
   // ── Handlers ──────────────────────────────────────────────────
   const handleImport = async (e) => {
@@ -61,7 +116,7 @@ export default function DataSiswaPage() {
       const res = await manajemenApi.importSiswa(file);
       const { imported, skipped } = res.data;
       showSuccessDialog(`Import berhasil! ${imported} data masuk, ${skipped} dilewati.`);
-      dispatch(asyncGetSiswa(offset, perPage));
+      muatUlang();
       dispatch(asyncGetStatsSiswa());
     } catch (err) {
       showErrorDialog(err.message);
@@ -94,20 +149,54 @@ export default function DataSiswaPage() {
   const handleDeleteClick   = (item) => setDeleteModal({ open: true, id: item.id, nama: item.namaLengkap });
   const handleDeleteCancel  = ()     => setDeleteModal({ open: false, id: null, nama: "" });
   const handleDeleteConfirm = ()     => {
-    dispatch(asyncDeleteSiswa(deleteModal.id));
+    dispatch(asyncDeleteSiswa(deleteModal.id, muatUlang));
     setDeleteModal({ open: false, id: null, nama: "" });
   };
 
-  // ── Filter lokal (dari data yang sudah di-fetch) ───────────────
-  const kelasList   = [...new Set(siswa.map((s) => s.kelas).filter(Boolean))];
-  const jurusanList = [...new Set(siswa.map((s) => s.jurusan).filter(Boolean))];
+  // Penyaringan sudah dikerjakan server, jadi baris ditampilkan apa adanya.
+  const kelasList   = opsiKelas;
+  const jurusanList = opsiJurusan;
+  const filtered    = siswa;
+  const nomorAwal   = modePencarian ? 0 : offset;
 
-  const filtered = siswa.filter((item) => {
-    const matchSearch  = item.namaLengkap?.toLowerCase().includes(search.toLowerCase());
-    const matchKelas   = filterKelas   ? item.kelas   === filterKelas   : true;
-    const matchJurusan = filterJurusan ? item.jurusan === filterJurusan : true;
-    return matchSearch && matchKelas && matchJurusan;
-  });
+  // ── Pilih banyak baris untuk dihapus sekaligus ────────────────
+  const idTampil = useMemo(() => filtered.map((item) => item.id), [filtered]);
+  const semuaTerpilih = idTampil.length > 0 && idTampil.every((id) => terpilih.has(id));
+  const sebagianTerpilih = terpilih.size > 0 && !semuaTerpilih;
+
+  const togglePilih = (id) =>
+    setTerpilih((prev) => {
+      const berikutnya = new Set(prev);
+      if (berikutnya.has(id)) berikutnya.delete(id);
+      else berikutnya.add(id);
+      return berikutnya;
+    });
+
+  const toggleSemua = () =>
+    setTerpilih(semuaTerpilih ? new Set() : new Set(idTampil));
+
+  const siswaTerpilih = filtered.filter((item) => terpilih.has(item.id));
+
+  const jalankanHapusMassal = async () => {
+    setMenghapusMassal(true);
+    try {
+      const res = await manajemenApi.hapusSiswaMassal(Array.from(terpilih));
+      const { dihapus = 0, tidakDitemukan = [] } = res.data || {};
+      setModalMassal(false);
+      setTerpilih(new Set());
+      muatUlang();
+      dispatch(asyncGetStatsSiswa());
+      showSuccessDialog(
+        tidakDitemukan.length > 0
+          ? `${dihapus} siswa dihapus. ${tidakDitemukan.length} data sudah tidak ada.`
+          : `${dihapus} siswa berhasil dihapus.`,
+      );
+    } catch (err) {
+      showErrorDialog(err.message);
+    } finally {
+      setMenghapusMassal(false);
+    }
+  };
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -147,7 +236,7 @@ export default function DataSiswaPage() {
             <div className="smk-filters">
               <input
                 type="text"
-                placeholder="cari....."
+                placeholder="Cari nama, NIS, atau NISN..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="input-search"
@@ -171,28 +260,53 @@ export default function DataSiswaPage() {
             </div>
           </div>
 
+          {/* BILAH PILIHAN */}
+          <BilahPilihan
+            jumlah={terpilih.size}
+            totalTampil={idTampil.length}
+            label="siswa"
+            memproses={menghapusMassal}
+            onPilihSemua={() => setTerpilih(new Set(idTampil))}
+            onBersihkan={() => setTerpilih(new Set())}
+            onHapus={() => setModalMassal(true)}
+          />
+
           {/* TABLE */}
           <div className="table-container">
             <table className="modern-table table-siswa">
               <thead>
                 <tr>
-                  <th>No</th>
+                  <th className="kolom-pilih">
+                    <KotakPilihSemua
+                      semua={semuaTerpilih}
+                      sebagian={sebagianTerpilih}
+                      onUbah={toggleSemua}
+                    />
+                  </th>
+                  <th className="kolom-no">No</th>
                   <th>NISN</th>
                   <th>NIS</th>
                   <th>Nama Lengkap</th>
                   <th>Kelas</th>
-                  <th>Jurusan</th>
-                  <th>Tanggal Lahir</th>
-                  <th>Alamat</th>
+                  <th className="kolom-teks">Jurusan</th>
+                  <th className="kolom-opsional">Tanggal Lahir</th>
+                  <th className="kolom-opsional kolom-teks">Alamat</th>
                   <th>No WA Ortu</th>
                   <th>Status</th>
-                  <th>Aksi</th>
+                  <th className="kolom-aksi">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((item, index) => (
-                  <tr key={item.id}>
-                    <td>{offset + index + 1}</td>
+                  <tr key={item.id} className={terpilih.has(item.id) ? "baris-terpilih" : ""}>
+                    <td className="kolom-pilih">
+                      <KotakPilih
+                        dipilih={terpilih.has(item.id)}
+                        onUbah={() => togglePilih(item.id)}
+                        judul={`Pilih ${item.namaLengkap}`}
+                      />
+                    </td>
+                    <td className="kolom-no">{nomorAwal + index + 1}</td>
                     <td>{item.nisn || "-"}</td>
                     <td>{item.nis || "-"}</td>
                     <td className="nama">
@@ -201,9 +315,9 @@ export default function DataSiswaPage() {
                       </button>
                     </td>
                     <td>{item.kelas || "-"}</td>
-                    <td>{item.jurusan || "-"}</td>
-                    <td>{item.tanggalLahir || "-"}</td>
-                    <td>{item.alamat || "-"}</td>
+                    <td className="kolom-teks">{item.jurusan || "-"}</td>
+                    <td className="kolom-opsional">{item.tanggalLahir || "-"}</td>
+                    <td className="kolom-opsional kolom-teks">{item.alamat || "-"}</td>
                     <td>{item.noWaOrtu || "-"}</td>
                     <td>
                       <span className={`badge ${item.status === "lulus" ? "lulus" : "aktif"}`}>
@@ -221,8 +335,10 @@ export default function DataSiswaPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={11} style={{ textAlign: "center", color: "#aaa", padding: "30px" }}>
-                      Tidak ada data siswa
+                    <td colSpan={12} style={{ textAlign: "center", color: "#aaa", padding: "30px" }}>
+                      {modePencarian
+                        ? "Tidak ada siswa yang cocok dengan pencarian"
+                        : "Tidak ada data siswa"}
                     </td>
                   </tr>
                 )}
@@ -250,23 +366,31 @@ export default function DataSiswaPage() {
               </a>
             </div>
 
-            <div className="pagination">
-              <button
-                onClick={() => setOffset((prev) => Math.max(0, prev - perPage))}
-                disabled={offset === 0}
-                className="pagination-btn"
-              >
-                ‹ Prev
-              </button>
-              <span className="pagination-btn active">{currentPage}</span>
-              <button
-                onClick={() => setOffset((prev) => prev + perPage)}
-                disabled={!hasMore}
-                className="pagination-btn"
-              >
-                Next ›
-              </button>
-            </div>
+            {modePencarian ? (
+              <div className="pagination">
+                <span style={{ fontSize: "13px", color: "#6b7280" }}>
+                  {filtered.length} siswa ditemukan
+                </span>
+              </div>
+            ) : (
+              <div className="pagination">
+                <button
+                  onClick={() => setOffset((prev) => Math.max(0, prev - perPage))}
+                  disabled={offset === 0}
+                  className="pagination-btn"
+                >
+                  ‹ Prev
+                </button>
+                <span className="pagination-btn active">{currentPage}</span>
+                <button
+                  onClick={() => setOffset((prev) => prev + perPage)}
+                  disabled={!hasMore}
+                  className="pagination-btn"
+                >
+                  Next ›
+                </button>
+              </div>
+            )}
           </div>
 
           <div style={{ borderTop: "1px solid #e5e7eb", margin: "32px 0" }} />
@@ -303,6 +427,17 @@ export default function DataSiswaPage() {
           ]}
         />
       )}
+
+      {/* MODAL HAPUS MASSAL */}
+      <KonfirmasiHapusMassal
+        terbuka={modalMassal}
+        jumlah={terpilih.size}
+        contoh={siswaTerpilih.slice(0, 5).map((s) => `${s.namaLengkap} — ${s.kelas || "tanpa kelas"}`)}
+        label="siswa"
+        memproses={menghapusMassal}
+        onBatal={() => setModalMassal(false)}
+        onKonfirmasi={jalankanHapusMassal}
+      />
 
       {/* MODAL HAPUS */}
       {deleteModal.open && (

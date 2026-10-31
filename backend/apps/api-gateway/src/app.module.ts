@@ -29,9 +29,16 @@ import { GatewayController } from './gateway.controller';
     PassportModule.register({ defaultStrategy: 'jwt' }),
 
     // Rate limiting — max 60 requests per 60 seconds per IP
+    /**
+     * Satu kali membuka halaman memicu belasan permintaan (pengaturan,
+     * statistik, daftar berita, gambar). Batas 60/menit membuat pengguna biasa
+     * ikut tertolak, jadi batas umum dibuat longgar dan bisa disetel lewat .env.
+     * Pengetatan yang benar-benar penting ada di endpoint login
+     * (lihat @Throttle pada AuthController).
+     */
     ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 60,
+      ttl: Number(process.env.RATE_LIMIT_TTL_MS) || 60000,
+      limit: Number(process.env.RATE_LIMIT_MAX) || 600,
     }]),
 
     // Login, verifikasi token, dan penyimpanan akun
