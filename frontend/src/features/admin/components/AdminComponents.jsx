@@ -1,10 +1,7 @@
 // src/features/admin/components/AdminComponents.jsx
 // Komponen reusable untuk semua halaman admin
 
-import { useEffect, useState } from "react";
 import { BASE_URL, GATEWAY_URL } from "../../../helpers/apiHelper";
-import { MAKS_UKURAN_MB, validasiDanSiapkanGambar } from "../../../helpers/gambarHelper";
-import { showErrorDialog } from "../../../helpers/toolsHelper";
 import Icon from "../../../components/Icon";
 
 // ── Normalize path gambar (handle backslash Windows) ─────────
@@ -67,12 +64,7 @@ export function AdminTable({ columns, children, loading, empty }) {
       <table className="smk-admin-table">
         <thead>
           <tr>
-            {/* Kolom boleh berupa teks biasa atau { kunci, isi } untuk header kustom. */}
-            {columns.map((c, i) => (
-              <th key={typeof c === "string" ? c : c.kunci ?? i}>
-                {typeof c === "string" ? c : c.isi}
-              </th>
-            ))}
+            {columns.map((c) => <th key={c}>{c}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -127,75 +119,23 @@ export function TingkatBadge({ tingkat }) {
 
 // ── Upload area ───────────────────────────────────────────────
 export function UploadArea({ id, onFile, preview, label = "Klik untuk pilih gambar" }) {
-  const [seretAktif, setSeretAktif] = useState(false);
-  const [menyiapkan, setMenyiapkan] = useState(false);
-
-  // Menjatuhkan berkas di luar area akan membuat browser membuka gambar itu dan
-  // isian form yang belum tersimpan ikut hilang, jadi drop di luar diabaikan.
-  useEffect(() => {
-    const abaikan = (event) => event.preventDefault();
-    window.addEventListener("dragover", abaikan);
-    window.addEventListener("drop", abaikan);
-    return () => {
-      window.removeEventListener("dragover", abaikan);
-      window.removeEventListener("drop", abaikan);
-    };
-  }, []);
-
-  const terima = async (berkas) => {
-    if (!berkas) return;
-    setMenyiapkan(true);
-    try {
-      const { file, pesan } = await validasiDanSiapkanGambar(berkas);
-      if (pesan) {
-        showErrorDialog(pesan);
-        return;
-      }
-      onFile?.(file);
-    } finally {
-      setMenyiapkan(false);
-    }
-  };
-
-  const hentikan = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
-
   return (
     <div className="smk-form-group">
-      <label
-        htmlFor={id}
-        className={`smk-upload-area${seretAktif ? " is-dragover" : ""}`}
-        onDragEnter={(e) => { hentikan(e); setSeretAktif(true); }}
-        onDragOver={(e) => { hentikan(e); setSeretAktif(true); }}
-        onDragLeave={(e) => { hentikan(e); setSeretAktif(false); }}
-        onDrop={(e) => {
-          hentikan(e);
-          setSeretAktif(false);
-          terima(e.dataTransfer?.files?.[0]);
-        }}
-      >
+      <label htmlFor={id} className="smk-upload-area">
         <Icon name="upload" size={28} className="smk-upload-icon" />
         <div>
           <span style={{ color: "var(--blue)", fontWeight: 600 }}>{label}</span>
-          {" "}atau tarik gambar ke sini
+          {" "}atau drag & drop
         </div>
         <div style={{ fontSize: 11, marginTop: 4, color: "var(--text-gray)" }}>
-          {menyiapkan
-            ? "Menyiapkan gambar..."
-            : `PNG, JPG, WEBP — Maks ${MAKS_UKURAN_MB}MB (gambar besar dikecilkan otomatis)`}
+          PNG, JPG, WEBP — Maks 5MB
         </div>
         <input
           type="file"
           id={id}
           accept="image/*"
           style={{ display: "none" }}
-          onChange={(e) => {
-            terima(e.target.files?.[0]);
-            // Memilih berkas yang sama dua kali berturut-turut tetap memicu onChange.
-            e.target.value = "";
-          }}
+          onChange={(e) => onFile && onFile(e.target.files[0])}
         />
       </label>
       {preview && (

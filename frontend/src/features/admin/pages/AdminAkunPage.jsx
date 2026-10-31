@@ -3,11 +3,6 @@ import Swal from "sweetalert2";
 import AdminLayout from "../layouts/AdminLayout";
 import { AdminCard, AdminTable, AdminModal } from "../components/AdminComponents";
 import RowActionMenu from "../../manajemen-data/components/RowActionMenu";
-import KonfirmasiHapusMassal, {
-  BilahPilihan,
-  KotakPilih,
-  KotakPilihSemua,
-} from "../../../components/HapusMassal";
 import {
   showConfirmDialog,
   showErrorDialog,
@@ -20,7 +15,6 @@ import {
   buatAkunSiswaMassal,
   getDaftarAkun,
   hapusAkun,
-  hapusAkunMassal,
   resetPasswordAkun,
   ubahStatusAkun,
 } from "../api/akunApi";
@@ -45,7 +39,7 @@ function tanggalSingkat(iso) {
 }
 
 export default function AdminAkunPage() {
-  const { isAuth, user, roles = [] } = useAuth();
+  const { isAuth, roles = [] } = useAuth();
   const bolehAkses = isAuth && roles.includes("master_admin");
 
   const [akun, setAkun] = useState([]);
@@ -67,10 +61,6 @@ export default function AdminAkunPage() {
   const [siswaTanpaAkun, setSiswaTanpaAkun] = useState([]);
   const [memuatSiswa, setMemuatSiswa] = useState(false);
 
-  const [terpilih, setTerpilih] = useState(() => new Set());
-  const [modalHapusMassal, setModalHapusMassal] = useState(false);
-  const [menghapusMassal, setMenghapusMassal] = useState(false);
-
   // Tanpa penjaga ini, halaman ikut memanggil API saat sesi sudah hilang (mis. setelah logout) dan memunculkan dialog 401.
   useEffect(() => {
     if (!bolehAkses) return;
@@ -81,8 +71,6 @@ export default function AdminAkunPage() {
     setLoading(true);
     try {
       setAkun(await getDaftarAkun());
-      // Pilihan dikosongkan supaya tidak menyisakan akun yang sudah tidak ada.
-      setTerpilih(new Set());
     } catch (err) {
       showErrorDialog(pesanError(err, "Gagal memuat daftar akun"));
     } finally {
@@ -101,56 +89,6 @@ export default function AdminAkunPage() {
       return cocokRole && cocokKunci;
     });
   }, [akun, cari, filterRole]);
-
-  // ── Pilih banyak akun untuk dihapus sekaligus ─────────────────
-  // Akun master admin dan akun yang sedang dipakai tidak bisa dipilih.
-  const bolehDipilih = (item) =>
-    !item.roles?.includes("master_admin") && item.id !== user?.id;
-
-  const idBisaDipilih = useMemo(
-    () => terfilter.filter(bolehDipilih).map((a) => a.id),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [terfilter, user?.id],
-  );
-  const semuaTerpilih =
-    idBisaDipilih.length > 0 && idBisaDipilih.every((id) => terpilih.has(id));
-  const sebagianTerpilih = terpilih.size > 0 && !semuaTerpilih;
-
-  const togglePilih = (id) =>
-    setTerpilih((prev) => {
-      const berikutnya = new Set(prev);
-      if (berikutnya.has(id)) berikutnya.delete(id);
-      else berikutnya.add(id);
-      return berikutnya;
-    });
-
-  const toggleSemua = () =>
-    setTerpilih(semuaTerpilih ? new Set() : new Set(idBisaDipilih));
-
-  const akunTerpilih = terfilter.filter((a) => terpilih.has(a.id));
-
-  const jalankanHapusMassal = async () => {
-    setMenghapusMassal(true);
-    try {
-      const hasil = await hapusAkunMassal(Array.from(terpilih));
-      const { dihapus = [], dilewati = [] } = hasil || {};
-      setModalHapusMassal(false);
-      setTerpilih(new Set());
-      await muatAkun();
-      showSuccessDialog(
-        dilewati.length > 0
-          ? `${dihapus.length} akun dihapus, ${dilewati.length} dilewati (${dilewati
-              .slice(0, 3)
-              .map((d) => `${d.username}: ${d.alasan}`)
-              .join("; ")}).`
-          : `${dihapus.length} akun berhasil dihapus.`,
-      );
-    } catch (err) {
-      showErrorDialog(pesanError(err, "Gagal menghapus akun terpilih"));
-    } finally {
-      setMenghapusMassal(false);
-    }
-  };
 
   const resetForm = () => {
     setUsername("");
@@ -310,52 +248,13 @@ export default function AdminAkunPage() {
           </button>
         </div>
 
-        <BilahPilihan
-          jumlah={terpilih.size}
-          totalTampil={idBisaDipilih.length}
-          label="akun"
-          memproses={menghapusMassal}
-          onPilihSemua={() => setTerpilih(new Set(idBisaDipilih))}
-          onBersihkan={() => setTerpilih(new Set())}
-          onHapus={() => setModalHapusMassal(true)}
-        />
-
         <AdminTable
-          columns={[
-            {
-              kunci: "pilih",
-              isi: (
-                <KotakPilihSemua
-                  semua={semuaTerpilih}
-                  sebagian={sebagianTerpilih}
-                  onUbah={toggleSemua}
-                />
-              ),
-            },
-            "Username",
-            "Nama",
-            "Role",
-            "Status Password",
-            "Dibuat",
-            "Status",
-            "Aksi",
-          ]}
+          columns={["Username", "Nama", "Role", "Status Password", "Dibuat", "Status", "Aksi"]}
           loading={loading}
           empty={!loading && terfilter.length === 0}
         >
           {terfilter.map((item) => (
             <tr key={item.id}>
-              <td>
-                {bolehDipilih(item) ? (
-                  <KotakPilih
-                    dipilih={terpilih.has(item.id)}
-                    onUbah={() => togglePilih(item.id)}
-                    judul={`Pilih akun ${item.username}`}
-                  />
-                ) : (
-                  <span title="Akun ini tidak bisa dihapus" style={{ color: "#cbd5e1" }}>—</span>
-                )}
-              </td>
               <td>{item.username}</td>
               <td>{item.nama}</td>
               <td>{item.roles.join(", ") || "-"}</td>
@@ -392,16 +291,6 @@ export default function AdminAkunPage() {
           ))}
         </AdminTable>
       </AdminCard>
-
-      <KonfirmasiHapusMassal
-        terbuka={modalHapusMassal}
-        jumlah={terpilih.size}
-        contoh={akunTerpilih.slice(0, 5).map((a) => `${a.username} — ${a.nama}`)}
-        label="akun"
-        memproses={menghapusMassal}
-        onBatal={() => setModalHapusMassal(false)}
-        onKonfirmasi={jalankanHapusMassal}
-      />
 
       <AdminModal
         open={modalBuat}

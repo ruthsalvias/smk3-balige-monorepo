@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, DeepPartial } from 'typeorm';
+import { Repository, Like, DeepPartial } from 'typeorm';
 import { News } from '../entities/news.entity';
 import { CreateNewsDto, UpdateNewsDto } from '../dtos';
 import { CategoryService } from './category.service';
@@ -118,8 +118,8 @@ export class NewsService {
   async search(keyword: string, limit = 20): Promise<News[]> {
     return this.repo.find({
       where: [
-        { title: ILike(`%${keyword}%`), isActive: true },
-        { content: ILike(`%${keyword}%`), isActive: true },
+        { title: Like(`%${keyword}%`), isActive: true },
+        { content: Like(`%${keyword}%`), isActive: true },
       ],
       order: { createdAt: 'DESC' },
       take: Math.min(limit, 50),

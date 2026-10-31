@@ -12,8 +12,6 @@ import {
 
 const initialState = {
   list: [],
-  // Dikirim server: { total, page, limit, totalPages }
-  meta: null,
   detail: null,
   loading: false,
   loadingDetail: false,
@@ -30,7 +28,7 @@ export const portofolioReducer = (state = initialState, action) => {
       return { ...state, loading: true, error: null };
     case PORTO_FETCH_ALL_SUCCESS:
     case PORTO_FETCH_MINE_SUCCESS:
-      return { ...state, loading: false, list: action.payload, meta: action.meta ?? null };
+      return { ...state, loading: false, list: action.payload };
     case PORTO_FETCH_ALL_FAILURE:
     case PORTO_FETCH_MINE_FAILURE:
       return { ...state, loading: false, error: action.payload };

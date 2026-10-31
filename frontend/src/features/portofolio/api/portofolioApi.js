@@ -53,6 +53,8 @@ function buildQueryString(params = {}) {
 
 async function createPortofolio(data) {
   const headers = buildUserHeaders();
+  console.log("Memulai POST Portofolio, memeriksa Headers yang dikirim:", headers);
+
   const res = await apiGateway.post(`${PREFIX}`, data, { headers });
   return res.data;
 }

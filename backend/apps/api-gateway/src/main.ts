@@ -1,22 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
-import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create(AppModule);
   const logger = new Logger('Gateway');
-
-  /**
-   * Tanpa ini Express membaca alamat IP container Nginx untuk SETIAP permintaan,
-   * sehingga pembatas laju memperlakukan seluruh pengunjung sebagai satu orang
-   * dan situs ikut tertolak ketika ramai.
-   *
-   * Nilainya adalah jumlah proxy di depan aplikasi: 1 bila hanya Nginx bawaan
-   * repo ini, 2 bila masih ada reverse proxy/tunnel lain di depannya.
-   */
-  const proxyHops = Number(process.env.TRUST_PROXY_HOPS || 1);
-  app.set('trust proxy', Number.isFinite(proxyHops) && proxyHops > 0 ? proxyHops : 1);
 
   // CORS — configurable via .env (mendukung multi-origin, trycloudflare, dan localhost)
   const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';

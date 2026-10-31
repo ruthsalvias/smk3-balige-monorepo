@@ -45,26 +45,6 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-/* Tombol tutup drawer — hanya tampil saat sidebar jadi drawer di layar kecil,
-   karena di sana sidebar menutupi tombol burger pada topbar. */
-.smk-admin-sidebar-close {
-  display: none;
-  margin-left: auto;
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  cursor: pointer;
-  transition: background 0.16s ease;
-}
-
-.smk-admin-sidebar-close:hover { background: rgba(255, 255, 255, 0.2); }
-
 .smk-admin-brand-logo {
   width: 36px;
   height: 36px;
@@ -699,10 +679,6 @@
 
   .smk-admin-burger {
     display: block;
-  }
-
-  .smk-admin-sidebar-close {
-    display: inline-flex;
   }
 
   .smk-admin-dashboard-grid {
@@ -1656,125 +1632,6 @@
 }
 
 .smk-upload-area:hover { border-color: #f5c518; background: #fffdf3; }
-
-/* ── HAPUS MASSAL ────────────────────────────────────────── */
-.smk-bulk-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-  padding: 11px 16px;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 13.5px;
-}
-
-.smk-bulk-info { display: inline-flex; align-items: center; gap: 8px; }
-.smk-bulk-info strong { font-size: 15px; }
-
-.smk-bulk-aksi { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-
-.smk-bulk-link {
-  background: none;
-  border: none;
-  padding: 4px 2px;
-  color: #1d4ed8;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.smk-bulk-link:hover { color: #1e3a8a; }
-
-.smk-bulk-hapus,
-.smk-btn-bahaya {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 15px;
-  border: 1px solid #dc2626;
-  border-radius: 8px;
-  background: #dc2626;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.16s ease;
-}
-
-.smk-bulk-hapus:hover:not(:disabled),
-.smk-btn-bahaya:hover:not(:disabled) { background: #b91c1c; border-color: #b91c1c; }
-
-.smk-bulk-hapus:disabled,
-.smk-btn-bahaya:disabled { opacity: 0.55; cursor: not-allowed; }
-
-.smk-bulk-checkbox {
-  width: 16px;
-  height: 16px;
-  accent-color: #1d4ed8;
-  cursor: pointer;
-  vertical-align: middle;
-}
-
-.smk-modal-header-bahaya { background: #b91c1c; }
-
-.smk-bulk-peringatan {
-  display: flex;
-  gap: 12px;
-  padding: 13px 15px;
-  border: 1px solid #fecaca;
-  border-radius: 9px;
-  background: #fef2f2;
-  color: #7f1d1d;
-}
-
-.smk-bulk-peringatan-ikon { flex-shrink: 0; color: #dc2626; }
-.smk-bulk-peringatan strong { display: block; font-size: 13.5px; }
-.smk-bulk-peringatan p { margin: 4px 0 0; font-size: 12.5px; color: #991b1b; }
-
-.smk-bulk-daftar {
-  margin-top: 14px;
-  padding: 12px 15px;
-  border: 1px solid #e2e8f1;
-  border-radius: 9px;
-  background: #f8fafc;
-}
-
-.smk-bulk-daftar-judul {
-  display: block;
-  margin-bottom: 7px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.smk-bulk-daftar ul { margin: 0; padding-left: 18px; }
-.smk-bulk-daftar li { font-size: 13px; color: #0f172a; line-height: 1.7; }
-
-.smk-bulk-daftar-sisa {
-  display: block;
-  margin-top: 7px;
-  font-size: 12.5px;
-  font-style: italic;
-  color: #64748b;
-}
-
-/* Umpan balik saat berkas sedang diseret di atas area unggah. */
-.smk-upload-area.is-dragover {
-  border-color: #2563eb;
-  border-style: solid;
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.smk-upload-area.is-dragover * { pointer-events: none; }
 
 .smk-admin-upload-preview {
   max-width: 220px;

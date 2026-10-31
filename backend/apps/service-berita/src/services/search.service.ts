@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { News } from '../entities/news.entity';
 import { Announcement } from '../entities/announcement.entity';
 
@@ -27,8 +27,8 @@ export class SearchService {
     const normalizedKeyword = this.normalizeKeyword(keyword);
     return this.newsRepo.find({
       where: [
-        { title: ILike(`%${normalizedKeyword}%`), isActive: true },
-        { content: ILike(`%${normalizedKeyword}%`), isActive: true },
+        { title: Like(`%${normalizedKeyword}%`), isActive: true },
+        { content: Like(`%${normalizedKeyword}%`), isActive: true },
       ],
       order: { createdAt: 'DESC' },
       take: Math.min(limit, 50),
@@ -39,8 +39,8 @@ export class SearchService {
     const normalizedKeyword = this.normalizeKeyword(keyword);
     return this.annRepo.find({
       where: [
-        { title: ILike(`%${normalizedKeyword}%`), isActive: true },
-        { content: ILike(`%${normalizedKeyword}%`), isActive: true },
+        { title: Like(`%${normalizedKeyword}%`), isActive: true },
+        { content: Like(`%${normalizedKeyword}%`), isActive: true },
       ],
       order: { createdAt: 'DESC' },
       take: Math.min(limit, 50),

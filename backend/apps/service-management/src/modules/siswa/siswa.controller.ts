@@ -5,8 +5,6 @@ import {
   Delete,
   Get,
   Headers,
-  HttpCode,
-  HttpStatus,
   NotFoundException,
   Param,
   Post,
@@ -25,7 +23,6 @@ import { SiswaService, SiswaFileType } from './siswa.service';
 import type { DokumenSiswa } from '../../models/SiswaModel';
 import { CreateSiswaDto } from './dto/create-siswa.dto';
 import { UpdateSiswaDto } from './dto/update-siswa.dto';
-import { HapusMassalDto } from '../../common/hapus-massal.dto';
 import { documentUploadOptions, memoryUploadOptions, UPLOAD_ROOT } from '../../common/upload.util';
 
 const FILE_TYPES: SiswaFileType[] = ['rapor', 'skl', 'ijazah'];
@@ -77,13 +74,6 @@ export class SiswaController {
   import(@UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('File Excel wajib diunggah');
     return this.siswaService.importFromBuffer(file.buffer);
-  }
-
-  /** Harus di atas route ':id' agar 'hapus-massal' tidak dibaca sebagai ID. */
-  @Post('hapus-massal')
-  @HttpCode(HttpStatus.OK)
-  hapusMassal(@Body() dto: HapusMassalDto) {
-    return this.siswaService.hapusMassal(dto.ids);
   }
 
   @Get('saya')

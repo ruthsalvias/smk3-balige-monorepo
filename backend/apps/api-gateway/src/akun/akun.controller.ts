@@ -22,8 +22,6 @@ import { PenggunaService } from '../auth/pengguna.service';
 
 const ROLE_BOLEH_DIBUAT: string[] = [Role.ADMIN, Role.GURU, Role.SISWA];
 const PANJANG_PASSWORD_MIN = 8;
-/** Disamakan dengan batas pembuatan akun siswa massal. */
-const MAKS_HAPUS_MASSAL = 500;
 
 interface BuatAkunDto {
   username?: unknown;
@@ -207,58 +205,6 @@ export class AkunController {
       statusCode: 201,
       message: `${dibuat.length} akun dibuat, ${dilewati.length} dilewati`,
       data: { dibuat, dilewati },
-    };
-  }
-
-  /**
-   * Menghapus banyak akun sekaligus — pasangan dari pembuatan akun massal.
-   * Akun yang tidak boleh dihapus (master admin atau akun yang sedang dipakai)
-   * dilewati dan dilaporkan, bukan menggagalkan seluruh permintaan.
-   */
-  @Post('hapus-massal')
-  @Roles(Role.MASTER_ADMIN)
-  @HttpCode(200)
-  async hapusMassal(@Body() body: { ids?: unknown }, @Req() req: Request) {
-    if (!Array.isArray(body.ids) || body.ids.length === 0) {
-      throw new BadRequestException('Tidak ada akun yang dipilih untuk dihapus');
-    }
-    if (body.ids.length > MAKS_HAPUS_MASSAL) {
-      throw new BadRequestException(`Maksimal ${MAKS_HAPUS_MASSAL} akun sekali hapus`);
-    }
-
-    const aktor = this.aktor(req);
-    const unik = Array.from(new Set(body.ids.map((nilai) => String(nilai))));
-
-    const dihapus: string[] = [];
-    const dilewati: { username: string; alasan: string }[] = [];
-
-    for (const id of unik) {
-      try {
-        const akun = await this.pengguna.cariId(id);
-        if (!akun) {
-          dilewati.push({ username: id, alasan: 'Akun tidak ditemukan' });
-          continue;
-        }
-        if (akun.id === aktor.sub) {
-          dilewati.push({ username: akun.username, alasan: 'Akun yang sedang Anda pakai' });
-          continue;
-        }
-        if ((akun.roles ?? []).includes(Role.MASTER_ADMIN)) {
-          dilewati.push({ username: akun.username, alasan: 'Akun master admin' });
-          continue;
-        }
-
-        await this.pengguna.hapus(id);
-        dihapus.push(akun.username);
-      } catch {
-        dilewati.push({ username: id, alasan: 'Gagal dihapus' });
-      }
-    }
-
-    return {
-      statusCode: 200,
-      message: `${dihapus.length} akun dihapus, ${dilewati.length} dilewati`,
-      data: { dihapus, dilewati },
     };
   }
 

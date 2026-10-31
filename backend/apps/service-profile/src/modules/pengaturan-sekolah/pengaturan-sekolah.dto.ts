@@ -1,5 +1,5 @@
 import { IsArray, IsOptional, IsString, IsUrl, MaxLength, ValidateNested } from 'class-validator';
-import { Transform, plainToInstance } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class SosialMediaDto {
   @IsString()
@@ -11,38 +11,17 @@ export class SosialMediaDto {
 }
 
 /** form-data mengirim JSON sebagai string, jadi perlu di-parse dulu. */
-function bacaArray(value: unknown): unknown[] {
-  if (Array.isArray(value)) return value;
-  if (typeof value !== 'string') return [];
-  if (value.trim() === '') return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-const parseJsonArray = () => Transform(({ value }) => bacaArray(value));
-
-/**
- * `whitelist: true` pada ValidationPipe membuang semua properti objek biasa
- * yang tidak punya metadata validasi. Karena @Transform menimpa @Type, tiap
- * item harus dijadikan instance SosialMediaDto di sini — tanpa itu
- * sosial_media selalu tersimpan sebagai [{}].
- */
-const parseSosialMedia = () =>
-  Transform(({ value }) =>
-    plainToInstance(
-      SosialMediaDto,
-      bacaArray(value)
-        .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
-        .map((item) => ({
-          platform: String(item.platform ?? '').trim(),
-          url: String(item.url ?? '').trim(),
-        })),
-    ),
-  );
+const parseJsonArray = () =>
+  Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    if (value.trim() === '') return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
 
 export class UpdatePengaturanSekolahDto {
   @IsOptional()
@@ -86,9 +65,10 @@ export class UpdatePengaturanSekolahDto {
   jam_operasional?: string;
 
   @IsOptional()
-  @parseSosialMedia()
+  @parseJsonArray()
   @IsArray()
   @ValidateNested({ each: true })
+  @Type(() => SosialMediaDto)
   sosial_media?: SosialMediaDto[];
 
   @IsOptional()

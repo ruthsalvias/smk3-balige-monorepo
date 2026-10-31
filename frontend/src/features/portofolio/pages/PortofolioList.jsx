@@ -29,7 +29,7 @@ function PortofolioList() {
   const { isAuth, login, user, roles } = useAuth();
   const isSiswa = roles.includes('siswa');
 
-  const { list, meta, loading, error } = useSelector((state) => state.portofolio);
+  const { list, loading, error } = useSelector((state) => state.portofolio);
 
   const [search, setSearch] = useState('');
   const [filterJurusan, setFilterJurusan] = useState('');
@@ -59,13 +59,8 @@ function PortofolioList() {
     if (!result.success) alert('Gagal menghapus data.');
   };
 
-  // Server sudah memotong per halaman, jadi daftarnya dipakai apa adanya.
-  // Jumlah halaman hanya diketahui server — menghitungnya dari panjang daftar
-  // (paling banyak sejumlah PER_PAGE) selalu menghasilkan 1 halaman sehingga
-  // tombol halaman tidak pernah muncul.
-  const totalPages = Math.max(1, Number(meta?.totalPages) || 1);
-  const totalData = Number(meta?.total) || (list || []).length;
-  const paginated = list || [];
+  const totalPages = Math.max(1, Math.ceil((list || []).length / PER_PAGE));
+  const paginated = (list || []).slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const isOwner = (portfolio) => {
     if (!isAuth) return false;
@@ -205,7 +200,7 @@ function PortofolioList() {
             <option value="Perhotelan">Perhotelan</option>
           </select>
           <span style={{ fontSize: '13px', color: '#6b7280', marginLeft: 'auto', fontFamily: 'Poppins, sans-serif' }}>
-            {totalData} karya ditemukan
+            {(list || []).length} karya ditemukan
           </span>
         </div>
 

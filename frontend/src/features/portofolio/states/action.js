@@ -43,9 +43,7 @@ export const fetchAllPortofolio = (params) => async (dispatch) => {
   dispatch({ type: PORTO_FETCH_ALL_REQUEST });
   try {
     const data = await portofolioApi.getAll(params);
-    // meta ikut disimpan karena jumlah halaman hanya diketahui server;
-    // menghitungnya dari panjang daftar selalu menghasilkan 1 halaman.
-    dispatch({ type: PORTO_FETCH_ALL_SUCCESS, payload: data.data ?? [], meta: data.meta ?? null });
+    dispatch({ type: PORTO_FETCH_ALL_SUCCESS, payload: data.data ?? [] });
   } catch (error) {
     dispatch({ type: PORTO_FETCH_ALL_FAILURE, payload: error.message });
   }
@@ -55,7 +53,7 @@ export const fetchMyPortofolios = (params) => async (dispatch) => {
   dispatch({ type: PORTO_FETCH_MINE_REQUEST });
   try {
     const data = await portofolioApi.getMyPortofolios(params);
-    dispatch({ type: PORTO_FETCH_MINE_SUCCESS, payload: data.data ?? [], meta: data.meta ?? null });
+    dispatch({ type: PORTO_FETCH_MINE_SUCCESS, payload: data.data ?? [] });
   } catch (error) {
     dispatch({ type: PORTO_FETCH_MINE_FAILURE, payload: error.message });
   }

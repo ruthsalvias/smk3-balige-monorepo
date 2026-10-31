@@ -10,15 +10,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { SkipThrottle } from '@nestjs/throttler';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { Roles } from '../auth/roles.decorator';
 import { Public } from '../auth/public.decorator';
 import { Role } from '@app/common';
 
-
-/** Metode yang badan permintaannya perlu diteruskan ulang ke service. */
-const METODE_BERBADAN = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 const TARGETS: Record<string, string> = {
   pelanggaran: process.env.SERVICE_PELANGGARAN_URL!,
@@ -33,8 +29,7 @@ export class ProxyController {
   private readonly logger = new Logger(ProxyController.name);
 
   private proxyBody(proxyReq: any, req: Request) {
-    // Hanya metode yang memang membawa badan permintaan yang perlu ditulis ulang.
-    if (!METODE_BERBADAN.has(req.method)) {
+    if (!req.body || Object.keys(req.body).length === 0) {
       return;
     }
 
@@ -43,16 +38,11 @@ export class ProxyController {
       ? contentType.some((value) => value.includes('application/json'))
       : contentType.includes('application/json');
 
-    // multipart/form-data tidak diparse body-parser, jadi diteruskan apa adanya.
     if (!isJson) {
       return;
     }
 
-    // Badan JSON sudah habis dibaca body-parser, sehingga harus ditulis ulang —
-    // termasuk ketika isinya objek kosong. Tanpa itu Content-Length tetap
-    // terkirim tetapi datanya tidak pernah sampai, dan permintaan menggantung
-    // sampai proxy_read_timeout (504).
-    const bodyData = JSON.stringify(req.body ?? {});
+    const bodyData = JSON.stringify(req.body);
     proxyReq.setHeader('Content-Type', 'application/json');
     proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
     proxyReq.write(bodyData);
@@ -126,11 +116,8 @@ proxyProfileRoot(@Req() req: Request, @Res() res: Response) {
   return this.forward('profile', req, res);
 }
 
-/** Gambar tidak ikut memakai kuota API supaya satu halaman penuh foto
-    tidak menghabiskan jatah permintaan pengguna. */
 @Get('profile/uploads/*path')
 @Public()
-@SkipThrottle()
 proxyProfileUploads(@Req() req: Request, @Res() res: Response) {
   return this.forward('profile', req, res);
 }
@@ -422,7 +409,6 @@ proxyProfileDelete(@Req() req: Request, @Res() res: Response) {
 
   @Get('portofolio/uploads/*path')
   @Public()
-  @SkipThrottle()
   proxyPortofolioUploads(@Req() req: Request, @Res() res: Response) {
       return this.forward('portofolio', req, res);
   }
@@ -475,22 +461,6 @@ proxyProfileDelete(@Req() req: Request, @Res() res: Response) {
   /* =========================
      MANAGEMENT (admin only)
   ========================= */
-
-  /**
-   * Hapus massal dipakai untuk membatalkan hasil impor yang salah.
-   * Harus dideklarasikan sebelum route ':id' agar tidak tertangkap sebagai ID.
-   */
-  @Post('management/siswa/hapus-massal')
-  @Roles(Role.ADMIN)
-  proxySiswaHapusMassal(@Req() req: Request, @Res() res: Response) {
-    return this.forward('management', req, res);
-  }
-
-  @Post('management/guru/hapus-massal')
-  @Roles(Role.ADMIN)
-  proxyGuruHapusMassal(@Req() req: Request, @Res() res: Response) {
-    return this.forward('management', req, res);
-  }
 
   /** Siswa hanya boleh melihat dan mengunduh dokumen miliknya sendiri. */
   @Get('management/siswa/saya')
@@ -611,16 +581,6 @@ proxyProfileDelete(@Req() req: Request, @Res() res: Response) {
               process.env.INTERNAL_GATEWAY_SECRET,
             );
           }
-
-          /**
-           * Identitas pengguna HANYA boleh berasal dari token yang sudah
-           * diverifikasi. Header bawaan klien dibuang lebih dulu supaya pada
-           * rute publik (tanpa sesi) tidak ada X-User-* kiriman luar yang
-           * lolos ke service dan disangka identitas asli.
-           */
-          proxyReq.removeHeader('X-User-Id');
-          proxyReq.removeHeader('X-User-Name');
-          proxyReq.removeHeader('X-User-Roles');
 
           if (user) {
             proxyReq.setHeader('X-User-Id', user.sub ?? '');

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { Guru } from '../../models/GuruModel';
 import { CreateGuruDto } from './dto/create-guru.dto';
 import { UpdateGuruDto } from './dto/update-guru.dto';
@@ -88,32 +88,6 @@ export class GuruService {
     const guru = await this.findOne(id);
     await this.guruRepository.remove(guru);
     return { message: 'Guru berhasil dihapus', data: { id } };
-  }
-
-  /**
-   * Menghapus banyak guru sekaligus, dipakai untuk membatalkan hasil impor
-   * yang salah. ID yang tidak ditemukan dilaporkan balik, bukan menggagalkan
-   * seluruh permintaan, supaya daftar yang sudah usang di layar tetap terproses.
-   */
-  async hapusMassal(ids: string[]) {
-    const unik = Array.from(new Set(ids));
-    const guru = await this.guruRepository.find({ where: { id: In(unik) } });
-
-    const ditemukan = new Set(guru.map((item) => item.id));
-    const tidakDitemukan = unik.filter((id) => !ditemukan.has(id));
-
-    if (guru.length > 0) {
-      await this.guruRepository.remove(guru);
-    }
-
-    return {
-      message: `${guru.length} data guru berhasil dihapus`,
-      data: {
-        diminta: unik.length,
-        dihapus: guru.length,
-        tidakDitemukan,
-      },
-    };
   }
 
   async exportToBuffer(): Promise<Buffer> {

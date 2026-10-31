@@ -81,16 +81,6 @@ export default function AdminLayout({
   // Tutup drawer otomatis setiap pindah halaman (mode mobile)
   useEffect(() => setSidebarOpen(false), [location.pathname]);
 
-  // Tombol Esc menutup drawer, seperti dialog pada umumnya.
-  useEffect(() => {
-    if (!sidebarOpen) return undefined;
-    const tanganiTombol = (e) => {
-      if (e.key === "Escape") setSidebarOpen(false);
-    };
-    window.addEventListener("keydown", tanganiTombol);
-    return () => window.removeEventListener("keydown", tanganiTombol);
-  }, [sidebarOpen]);
-
   // AdminLayout di-mount ulang tiap halaman — pulihkan posisi scroll menu.
   useLayoutEffect(() => {
     const el = navRef.current;
@@ -187,17 +177,6 @@ export default function AdminLayout({
             <strong>{pengaturan.nama_sekolah}</strong>
             <span>Panel Administrasi</span>
           </span>
-          {/* Di layar kecil sidebar menutupi tombol burger di topbar, jadi
-              penutupnya harus ada di dalam sidebar itu sendiri. */}
-          <button
-            type="button"
-            className="smk-admin-sidebar-close"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Tutup menu"
-            title="Tutup menu"
-          >
-            <Icon name="close" size={20} />
-          </button>
         </div>
 
         <nav
