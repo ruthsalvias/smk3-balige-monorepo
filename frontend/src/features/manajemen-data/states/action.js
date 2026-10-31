@@ -55,6 +55,26 @@ export function asyncGetSiswa(offset = 0, limit = 20) {
   };
 }
 
+/**
+ * Pencarian dikerjakan di server supaya mencakup seluruh data, bukan hanya
+ * 20 baris halaman yang sedang tampil.
+ */
+export function asyncCariSiswa(params = {}) {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoading(true));
+      const data = await manajemenApi.searchSiswa(params);
+      dispatch(setSiswa(data.data.siswa));
+      dispatch(setHasMoreSiswa(false));
+    } catch (e) {
+      dispatch(setSiswa([]));
+      showErrorDialog(e.message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+}
+
 // Tambahkan setelah asyncGetSiswa
 
 export function asyncGetStatsSiswa() {
@@ -100,9 +120,11 @@ export function asyncDeleteSiswa(id, cb) {
     try {
       await manajemenApi.deleteSiswa(id);
       showSuccessDialog("Siswa berhasil dihapus");
-      dispatch(asyncGetSiswa());
       dispatch(asyncGetStatsSiswa());
+      // Pemanggil yang sedang menampilkan hasil pencarian memuat ulang sendiri
+      // lewat cb, supaya daftarnya tidak melompat balik ke halaman pertama.
       if (cb) cb();
+      else dispatch(asyncGetSiswa());
     } catch (e) {
       showErrorDialog(e.message);
     }
@@ -120,6 +142,23 @@ export function asyncGetGuru(offset = 0, limit = 20) {
       const data = await manajemenApi.getGuruPage(limit, offset);
       dispatch(setGuru(data.data.guru));
       dispatch(setHasMoreGuru(data.data.hasMore));
+    } catch (e) {
+      dispatch(setGuru([]));
+      showErrorDialog(e.message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+}
+
+/** Sama seperti asyncCariSiswa: pencarian guru dilakukan di server. */
+export function asyncCariGuru(params = {}) {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoading(true));
+      const data = await manajemenApi.searchGuru(params);
+      dispatch(setGuru(data.data.guru));
+      dispatch(setHasMoreGuru(false));
     } catch (e) {
       dispatch(setGuru([]));
       showErrorDialog(e.message);
@@ -160,8 +199,10 @@ export function asyncDeleteGuru(id, cb) {
     try {
       await manajemenApi.deleteGuru(id);
       showSuccessDialog("Guru berhasil dihapus");
-      dispatch(asyncGetGuru());
+      // Pemanggil yang sedang menampilkan hasil pencarian memuat ulang sendiri
+      // lewat cb, supaya daftarnya tidak melompat balik ke halaman pertama.
       if (cb) cb();
+      else dispatch(asyncGetGuru());
     } catch (e) {
       showErrorDialog(e.message);
     }

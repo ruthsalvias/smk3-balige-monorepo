@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
 import { DokumenSiswa, Siswa } from '../../models/SiswaModel';
 import { CreateSiswaDto } from './dto/create-siswa.dto';
 import { UpdateSiswaDto } from './dto/update-siswa.dto';
@@ -164,6 +164,32 @@ export class SiswaService {
     const siswa = await this.findOne(id);
     await this.siswaRepository.remove(siswa);
     return { message: 'Siswa berhasil dihapus', data: { id } };
+  }
+
+  /**
+   * Menghapus banyak siswa sekaligus, dipakai untuk membatalkan hasil impor
+   * yang salah. ID yang tidak ditemukan dilaporkan balik, bukan menggagalkan
+   * seluruh permintaan, supaya daftar yang sudah usang di layar tetap terproses.
+   */
+  async hapusMassal(ids: string[]) {
+    const unik = Array.from(new Set(ids));
+    const siswa = await this.siswaRepository.find({ where: { id: In(unik) } });
+
+    const ditemukan = new Set(siswa.map((item) => item.id));
+    const tidakDitemukan = unik.filter((id) => !ditemukan.has(id));
+
+    if (siswa.length > 0) {
+      await this.siswaRepository.remove(siswa);
+    }
+
+    return {
+      message: `${siswa.length} data siswa berhasil dihapus`,
+      data: {
+        diminta: unik.length,
+        dihapus: siswa.length,
+        tidakDitemukan,
+      },
+    };
   }
 
   /** Menambahkan satu atau beberapa berkas ke jenis dokumen tertentu. */

@@ -31,7 +31,14 @@ body {
   padding: 0 24px;
 }
 
-.smk-section { padding: 72px 0; }
+/* Animasi Reveal menggeser elemen sejauh 48px ke samping sebelum tampil.
+   Tanpa dipotong, geseran itu membuat halaman bisa digeser ke kanan selama
+   animasi berjalan. `clip` dipakai, bukan `hidden`, supaya tidak membentuk
+   konteks gulir baru yang akan merusak navbar sticky. */
+.smk-section {
+  padding: 72px 0;
+  overflow-x: clip;
+}
 .smk-bg-cream { background: var(--p-surface); }
 
 .smk-section-head {
@@ -1321,6 +1328,18 @@ body {
   .smk-nav-item.smk-nav-active::after { content: none; }
   .smk-nav-item.smk-nav-active { background: rgba(245, 197, 24, 0.16); }
   .smk-nav-user { display: none; }
+}
+
+/* Di rentang ini menu mendatar masih tampil penuh, tetapi ruangnya mepet
+   begitu pengguna login karena muncul nama pengguna dan tombol "Keluar".
+   Jarak dirapatkan dan nama pengguna disembunyikan supaya navbar tidak
+   mendorong halaman jadi lebih lebar dari layar. */
+@media (min-width: 961px) and (max-width: 1099px) {
+  .smk-nav-inner { gap: 12px; padding: 0 16px; }
+  .smk-nav-item { padding: 9px 10px; font-size: 13px; }
+  .smk-nav-user { display: none; }
+  .smk-nav-actions { gap: 8px; }
+  .smk-btn-login { padding: 9px 14px; }
 }
 
 @media (max-width: 560px) {

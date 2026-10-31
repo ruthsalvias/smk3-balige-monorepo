@@ -1,5 +1,32 @@
 import apiHelper, { BASE_URL } from '../../../helpers/apiHelperManajemen';
 
+/**
+ * Membuang parameter kosong sebelum dirangkai jadi query string.
+ * Tanpa ini `{ q: undefined }` berubah jadi `q=undefined` dan backend mencari
+ * siswa yang namanya mengandung teks "undefined".
+ */
+/** Mengambil pesan dari badan respons; jatuh ke pesan bawaan bila bukan JSON. */
+async function pesanError(res, bawaan) {
+  try {
+    const isi = await res.json();
+    const pesan = Array.isArray(isi?.message) ? isi.message.join(', ') : isi?.message;
+    return pesan || bawaan;
+  } catch {
+    return bawaan;
+  }
+}
+
+function buildQuery(params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    const teks = String(value).trim();
+    if (teks === '') return;
+    query.append(key, teks);
+  });
+  return query.toString();
+}
+
 // ============================
 // SISWA
 // ============================
@@ -36,6 +63,17 @@ async function putSiswa(id, data) {
   return res.json();
 }
 
+/** Menghapus banyak siswa sekaligus (membatalkan hasil impor yang salah). */
+async function hapusSiswaMassal(ids = []) {
+  const res = await apiHelper.fetchData(`${BASE_URL}/siswa/hapus-massal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal menghapus data siswa terpilih'));
+  return res.json();
+}
+
 async function deleteSiswa(id) {
   const res = await apiHelper.fetchData(`${BASE_URL}/siswa/${id}`, {
     method: 'DELETE',
@@ -45,9 +83,9 @@ async function deleteSiswa(id) {
 }
 
 async function searchSiswa(params = {}) {
-  const query = new URLSearchParams(params).toString();
+  const query = buildQuery(params);
   const res = await apiHelper.fetchData(`${BASE_URL}/siswa/search?${query}`);
-  if (!res.ok) throw new Error('Gagal search siswa');
+  if (!res.ok) throw new Error('Gagal mencari data siswa');
   return res.json();
 }
 
@@ -88,7 +126,7 @@ async function downloadFileSiswa(id, type) {
 
 // EXPORT EXCEL
 async function exportSiswa(params = {}) {
-  const query = new URLSearchParams(params).toString();
+  const query = buildQuery(params);
   const res = await apiHelper.fetchData(`${BASE_URL}/siswa/export${query ? `?${query}` : ''}`);
   if (!res.ok) throw new Error('Gagal export siswa');
   const blob = await res.blob();
@@ -155,6 +193,17 @@ async function putGuru(id, data) {
   return res.json();
 }
 
+/** Menghapus banyak guru sekaligus (membatalkan hasil impor yang salah). */
+async function hapusGuruMassal(ids = []) {
+  const res = await apiHelper.fetchData(`${BASE_URL}/guru/hapus-massal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal menghapus data guru terpilih'));
+  return res.json();
+}
+
 async function deleteGuru(id) {
   const res = await apiHelper.fetchData(`${BASE_URL}/guru/${id}`, {
     method: 'DELETE',
@@ -164,9 +213,9 @@ async function deleteGuru(id) {
 }
 
 async function searchGuru(params = {}) {
-  const query = new URLSearchParams(params).toString();
+  const query = buildQuery(params);
   const res = await apiHelper.fetchData(`${BASE_URL}/guru/search?${query}`);
-  if (!res.ok) throw new Error('Gagal search guru');
+  if (!res.ok) throw new Error('Gagal mencari data guru');
   return res.json();
 }
 
@@ -215,6 +264,7 @@ const manajemenApi = {
   postSiswa,
   putSiswa,
   deleteSiswa,
+  hapusSiswaMassal,
   searchSiswa,
   getStatsSiswa,
   uploadSiswaFile,
@@ -229,6 +279,7 @@ const manajemenApi = {
   postGuru,
   putGuru,
   deleteGuru,
+  hapusGuruMassal,
   searchGuru,
   getTotalGuru,
   exportGuru,
