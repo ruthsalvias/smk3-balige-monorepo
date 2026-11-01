@@ -2301,8 +2301,8 @@
  
 
 /* -- Kelola Akun (master admin) -- */
-.smk-akun-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-.smk-akun-input { padding: 8px 12px; border: 1px solid #d9dee7; border-radius: 8px; font-size: 13px; min-width: 200px; }
+.smk-akun-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.smk-akun-input { padding: 8px 12px; height: 42px; box-sizing: border-box; border: 1.5px solid #d1d5db; border-radius: 10px; font-size: 13.5px; min-width: 170px; }
 .smk-akun-preview { max-height: 200px; overflow-y: auto; border: 1px solid #e6e9ef; border-radius: 8px; padding: 10px; font-size: 12.5px; line-height: 1.7; background: #fafbfc; }
 
 /* ── Hero Admin Grid ───────────────────────────── */

@@ -1,0 +1,103 @@
+/* Kotak pencarian tabel panel admin. Lihat KotakCari.jsx. */
+
+.kotak-cari {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 320px;
+  min-width: 240px;
+  max-width: 460px;
+  padding: 0 12px;
+  height: 42px;
+  box-sizing: border-box;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.kotak-cari:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.kotak-cari-ikon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: #9ca3af;
+}
+
+.kotak-cari:focus-within .kotak-cari-ikon {
+  color: #3b82f6;
+}
+
+/* Lebar dan rupa dikunci di sini supaya aturan input umum pada panel admin
+   tidak ikut mengubahnya. */
+.kotak-cari .kotak-cari-input,
+.smk-admin-layout .kotak-cari .kotak-cari-input,
+.smk-modal .kotak-cari .kotak-cari-input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: #374151;
+}
+
+.kotak-cari .kotak-cari-input::placeholder {
+  color: #9ca3af;
+  /* Petunjuk yang kepanjangan dipotong rapi, bukan terputus di tengah kata. */
+  text-overflow: ellipsis;
+}
+
+/* Tombol silang bawaan peramban disembunyikan; tombolnya kita sediakan sendiri
+   agar tampil sama di semua peramban. */
+.kotak-cari .kotak-cari-input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.kotak-cari-jumlah {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+.kotak-cari-hapus {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #4b5563;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.kotak-cari-hapus:hover {
+  background: #d1d5db;
+  color: #111827;
+}
+
+@media (max-width: 640px) {
+  .kotak-cari {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}

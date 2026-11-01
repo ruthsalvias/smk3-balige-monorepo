@@ -14,6 +14,7 @@ import DetailModal from "../components/DetailModal.jsx";
 import RowActionMenu from "../components/RowActionMenu.jsx";
 import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
+import KotakCari from "../../../components/KotakCari";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -198,12 +199,12 @@ export default function DataGuruPage() {
               + Tambah Guru
             </button>
             <div className="smk-filters">
-              <input
-                type="text"
-                placeholder="Cari nama guru atau NIP..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="input-search"
+              <KotakCari
+                nilai={search}
+                onUbah={setSearch}
+                placeholder="Cari nama guru, NIP, mata pelajaran, atau jabatan..."
+                jumlah={filtered.length}
+                labelJumlah="guru"
               />
               <select
                 value={filterMapel}

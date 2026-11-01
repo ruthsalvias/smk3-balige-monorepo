@@ -15,6 +15,7 @@ import AdminLayout from "../../admin/layouts/AdminLayout.jsx";
 import RowActionMenu from "../components/RowActionMenu.jsx";
 import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
+import KotakCari from "../../../components/KotakCari";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -212,12 +213,12 @@ export default function DataSiswaPage() {
               + Tambah Siswa
             </button>
             <div className="smk-filters">
-              <input
-                type="text"
+              <KotakCari
+                nilai={search}
+                onUbah={setSearch}
                 placeholder="Cari nama, NIS, atau NISN..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="input-search"
+                jumlah={filtered.length}
+                labelJumlah="siswa"
               />
               <select
                 value={filterKelas}

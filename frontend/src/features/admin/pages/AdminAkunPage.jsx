@@ -3,6 +3,7 @@ import Swal from "sweetalert2";
 import AdminLayout from "../layouts/AdminLayout";
 import { AdminCard, AdminTable, AdminModal } from "../components/AdminComponents";
 import RowActionMenu from "../../manajemen-data/components/RowActionMenu";
+import KotakCari from "../../../components/KotakCari";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -378,11 +379,12 @@ export default function AdminAkunPage() {
         addLabel="+ Buat Akun"
       >
         <div className="smk-akun-toolbar">
-          <input
-            className="smk-akun-input"
+          <KotakCari
+            nilai={cari}
+            onUbah={setCari}
             placeholder="Cari username, nama, kelas, atau jurusan..."
-            value={cari}
-            onChange={(e) => setCari(e.target.value)}
+            jumlah={terfilter.length}
+            labelJumlah="akun"
           />
           <select
             className="smk-akun-input"

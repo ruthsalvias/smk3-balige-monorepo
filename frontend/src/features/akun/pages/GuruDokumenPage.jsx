@@ -3,6 +3,7 @@ import Navbar from "../../profil/components/NavbarComponent";
 import Footer from "../../profil/components/FooterComponent";
 import Icon from "../../../components/Icon";
 import DaftarDokumen from "../../../components/DaftarDokumen";
+import KotakCari from "../../../components/KotakCari";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   showConfirmDialog,
@@ -154,11 +155,12 @@ export default function GuruDokumenPage() {
             <span className="smk-akun-hint">
               <Icon name="students" size={16} /> {terfilter.length} siswa
             </span>
-            <input
-              className="smk-akun-cari"
-              placeholder="Cari nama, NIS, atau kelas..."
-              value={cari}
-              onChange={(e) => setCari(e.target.value)}
+            <KotakCari
+              nilai={cari}
+              onUbah={setCari}
+              placeholder="Cari nama, NIS, NISN, atau kelas..."
+              jumlah={terfilter.length}
+              labelJumlah="siswa"
             />
           </div>
 
