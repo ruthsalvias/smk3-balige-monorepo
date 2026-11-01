@@ -614,19 +614,29 @@ export default function AdminPelanggaranPage() {
         <div className="smk-form-group">
           <label>Penandatangan <span style={{color: 'red'}}>*</span></label>
           
-          <div 
-            className="smk-form-input" 
-            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', userSelect: 'none' }}
+          <div
+            className={`smk-pilih-guru-trigger${showGuruDropdown ? " terbuka" : ""}`}
+            role="button"
+            tabIndex={0}
+            aria-expanded={showGuruDropdown}
             onClick={() => setShowGuruDropdown(!showGuruDropdown)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowGuruDropdown(!showGuruDropdown);
+              }
+            }}
           >
-            <span style={{ color: idPenandatangan.length ? '#0f2244' : '#94a3b8' }}>
-              {idPenandatangan.length > 0 ? `${idPenandatangan.length} Guru Dipilih` : "-- Klik untuk pilih Guru --"}
+            <span className={idPenandatangan.length ? "" : "kosong"}>
+              {idPenandatangan.length > 0
+                ? `${idPenandatangan.length} guru dipilih`
+                : "Klik untuk pilih guru"}
             </span>
-            <span style={{ fontSize: '10px', color: '#64748b' }}>{showGuruDropdown ? "▲" : "▼"}</span>
+            <span className="panah">{showGuruDropdown ? "▲" : "▼"}</span>
           </div>
 
           {showGuruDropdown && (
-            <div style={{ border: '1px solid #e5e9f2', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '12px', background: '#f8faff', marginTop: '-4px' }}>
+            <div className="smk-pilih-guru-panel">
               <input
                 type="text"
                 className="smk-form-input"
@@ -634,32 +644,38 @@ export default function AdminPelanggaranPage() {
                 placeholder="Ketik nama, NIP, atau jabatan guru..."
                 value={cariGuru}
                 onChange={(e) => setCariGuru(e.target.value)}
-                style={{ marginBottom: '10px', background: '#fff' }}
               />
 
-              <div style={{ maxHeight: '160px', overflowY: 'auto' }}>
-              {masterGuru.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#ef4444', textAlign: 'center' }}>Gagal memuat data guru.</div>
-              ) : guruTersaring.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', padding: '8px' }}>
-                  Tidak ada guru yang cocok dengan &quot;{cariGuru}&quot;.
-                </div>
-              ) : (
-                guruTersaring.map(guru => (
-                  <label key={guru.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: '13px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      style={{ transform: 'scale(1.2)', cursor: 'pointer' }}
-                      checked={idPenandatangan.includes(guru.id)}
-                      onChange={() => handleCheckboxChange(guru.id)}
-                    />
-                    <div>
-                      <strong style={{ color: '#0f2244' }}>{guru.nama}</strong> <br/>
-                      <span style={{color: '#64748b', fontSize: '11px'}}>{guru.jabatan}</span>
-                    </div>
-                  </label>
-                ))
-              )}
+              <div className="smk-pilih-guru-daftar">
+                {masterGuru.length === 0 ? (
+                  <div className="smk-pilih-guru-pesan gagal">Gagal memuat data guru.</div>
+                ) : guruTersaring.length === 0 ? (
+                  <div className="smk-pilih-guru-pesan">
+                    Tidak ada guru yang cocok dengan &quot;{cariGuru}&quot;.
+                  </div>
+                ) : (
+                  guruTersaring.map((guru) => {
+                    const dipilih = idPenandatangan.includes(guru.id);
+                    return (
+                      <label
+                        key={guru.id}
+                        className={`smk-pilih-guru-item${dipilih ? " terpilih" : ""}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={dipilih}
+                          onChange={() => handleCheckboxChange(guru.id)}
+                        />
+                        <span className="smk-pilih-guru-teks">
+                          <span className="smk-pilih-guru-nama">{guru.nama}</span>
+                          <span className="smk-pilih-guru-sub">
+                            {[guru.jabatan, guru.nip].filter(Boolean).join(" · ") || "—"}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
