@@ -146,6 +146,16 @@
   max-width: 380px;
 }
 
+/* Di layar sempit kotak cari sudah turun ke barisnya sendiri, jadi batas
+   380px itu hanya menyisakan ruang kosong di sebelahnya. */
+@media (max-width: 768px) {
+  .skl-toolbar-actions .kotak-cari {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+  }
+}
+
 .skl-btn {
   display: inline-flex;
   align-items: center;

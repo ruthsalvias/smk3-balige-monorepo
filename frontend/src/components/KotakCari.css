@@ -8,8 +8,14 @@
   min-width: 240px;
   max-width: 460px;
   padding: 0 12px;
-  height: 42px;
   box-sizing: border-box;
+  /* Tingginya dikunci dari tiga sisi. `height` saja tidak cukup: bila induknya
+     berubah menjadi kolom (seperti .smk-filters di layar sempit), `flex-basis`
+     di atas berpindah menjadi ukuran tinggi dan kotak ini memanjang ke bawah
+     sampai ratusan piksel. Batas min/max berlaku di sumbu mana pun. */
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
   border: 1.5px solid #d1d5db;
   border-radius: 10px;
   background: #fff;
@@ -95,9 +101,13 @@
   color: #111827;
 }
 
-@media (max-width: 640px) {
+/* Ambang ini mengikuti admin.css, tempat .smk-action-bar dan .smk-filters
+   berubah menjadi kolom. Sebelumnya di sini 640px, sehingga pada rentang
+   641-768px kotak ini masih dibatasi 460px di dalam kolom selebar penuh. */
+@media (max-width: 768px) {
   .kotak-cari {
-    flex-basis: 100%;
+    flex: 1 1 auto;
+    width: 100%;
     max-width: none;
   }
 }
