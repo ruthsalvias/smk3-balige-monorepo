@@ -168,17 +168,44 @@ export class SiswaService {
   }
 
   /** Mencari record siswa milik pengguna yang sedang login (username akun = NIS). */
+  /**
+   * Mencari data siswa milik satu akun.
+   *
+   * Username akun selalu disimpan dalam huruf kecil, sedangkan NIS dan NISN
+   * tersimpan apa adanya. Pencocokan karena itu mengabaikan besar-kecil huruf;
+   * tanpa itu akun "11s23033" tidak pernah menemukan siswa ber-NISN "11S23033"
+   * dan siswanya melihat pesan "data tidak ditemukan" saat masuk.
+   */
   async findByPengguna(userId?: string, username?: string): Promise<Siswa> {
-    const where: FindOptionsWhere<Siswa>[] = [];
-    if (userId) where.push({ ownerUserId: userId });
-    if (username) {
-      where.push({ nis: username });
-      where.push({ nisn: username });
-    }
-    if (!where.length) throw new NotFoundException('Data siswa tidak ditemukan');
+    if (!userId && !username) throw new NotFoundException('Data siswa tidak ditemukan');
 
-    const siswa = await this.siswaRepository.findOne({ where });
-    if (!siswa) throw new NotFoundException('Data siswa untuk akun ini tidak ditemukan');
+    const pencarian = this.siswaRepository.createQueryBuilder('siswa');
+
+    if (userId && username) {
+      pencarian.where('siswa.ownerUserId = :userId', { userId }).orWhere(
+        'LOWER(siswa.nis) = LOWER(:username) OR LOWER(siswa.nisn) = LOWER(:username)',
+        { username },
+      );
+    } else if (userId) {
+      pencarian.where('siswa.ownerUserId = :userId', { userId });
+    } else {
+      pencarian.where(
+        'LOWER(siswa.nis) = LOWER(:username) OR LOWER(siswa.nisn) = LOWER(:username)',
+        { username },
+      );
+    }
+
+    // Tautan ke akun didahulukan supaya tidak tertukar bila ada NIS kembar.
+    const siswa = await pencarian
+      .orderBy('CASE WHEN siswa.ownerUserId = :prioritas THEN 0 ELSE 1 END', 'ASC')
+      .setParameter('prioritas', userId ?? '')
+      .getOne();
+
+    if (!siswa) {
+      throw new NotFoundException(
+        'Data siswa untuk akun ini belum ada. Minta admin memastikan NISN pada data siswa sama dengan username akun Anda.',
+      );
+    }
 
     // Simpan tautan ke akun Keycloak supaya pencarian berikutnya langsung tepat.
     if (userId && siswa.ownerUserId !== userId) {
