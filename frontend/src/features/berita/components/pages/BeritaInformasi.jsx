@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ProfilLayout from "../../../profil/layouts/ProfilLayout";
+import { useSiteSettings } from "../../../profil/context/SiteSettingsContext";
 import Icon from "../../../../components/Icon";
 import "./BeritaPage.css";
 import {
@@ -321,6 +322,7 @@ function DetailModal({ selected, onClose }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function BeritaPage() {
   const dispatch       = useDispatch();
+  const { pengaturan } = useSiteSettings();
   const beritaList     = useSelector((s) => s.berita      || []);
   const agendaList     = useSelector((s) => s.agenda      || []);
   const pengumumanList = useSelector((s) => s.pengumuman  || []);
@@ -371,7 +373,7 @@ export default function BeritaPage() {
       <section className="bp-hero">
         <div className="bp-hero-content">
           <Animate animation="fade-up" delay={0} threshold={0.05}>
-            <span className="bp-badge-tahun">Tahun Ajaran 2026/2027</span>
+            <span className="bp-badge-tahun">Tahun Ajaran {pengaturan?.tahun_ajaran || "—"}</span>
           </Animate>
           <Animate animation="fade-up" delay={100} threshold={0.05}>
             <h1 className="bp-hero-title">BERITA &amp; INFORMASI<br />SEKOLAH</h1>

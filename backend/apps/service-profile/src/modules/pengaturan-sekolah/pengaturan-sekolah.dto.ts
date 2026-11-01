@@ -62,6 +62,11 @@ export class UpdatePengaturanSekolahDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
+  judul_hero?: string;
+
+  @IsOptional()
+  @IsString()
   deskripsi_singkat?: string;
 
   @IsOptional()

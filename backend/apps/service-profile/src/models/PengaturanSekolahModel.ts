@@ -8,6 +8,8 @@ const PengaturanSekolahModel = dbProfile.define(
     nama_sekolah: { type: DataTypes.STRING, allowNull: false, defaultValue: "SMK Negeri 3 Balige" },
     nama_singkat: { type: DataTypes.STRING, allowNull: true, defaultValue: "SMKN 3 Balige" },
     tagline: { type: DataTypes.STRING, allowNull: true, defaultValue: "Excellence in Education" },
+    // Baris putih di atas nama sekolah pada hero beranda.
+    judul_hero: { type: DataTypes.STRING, allowNull: true, defaultValue: "WEBSITE RESMI" },
     deskripsi_singkat: { type: DataTypes.TEXT, allowNull: true },
     tahun_ajaran: { type: DataTypes.STRING, allowNull: true },
     logo_url: { type: DataTypes.STRING, allowNull: true },

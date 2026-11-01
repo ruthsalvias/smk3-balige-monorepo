@@ -22,6 +22,7 @@ const EMPTY = {
   nama_sekolah: "",
   nama_singkat: "",
   tagline: "",
+  judul_hero: "",
   deskripsi_singkat: "",
   tahun_ajaran: "",
   alamat: "",
@@ -59,6 +60,7 @@ export default function AdminPengaturanPage() {
           nama_sekolah: data.nama_sekolah || "",
           nama_singkat: data.nama_singkat || "",
           tagline: data.tagline || "",
+          judul_hero: data.judul_hero || "",
           deskripsi_singkat: data.deskripsi_singkat || "",
           tahun_ajaran: data.tahun_ajaran || "",
           alamat: data.alamat || "",
@@ -337,6 +339,11 @@ export default function AdminPengaturanPage() {
                   <label htmlFor="tahun_ajaran">Tahun Ajaran</label>
                   <input id="tahun_ajaran" value={form.tahun_ajaran} onChange={onChange("tahun_ajaran")} placeholder="2025/2026" />
                 </div>
+              </div>
+              <div className="smk-form-group">
+                <label htmlFor="judul_hero">Judul Hero Beranda</label>
+                <input id="judul_hero" value={form.judul_hero} onChange={onChange("judul_hero")} placeholder="WEBSITE RESMI" />
+                <small className="smk-form-hint">Baris putih di atas nama sekolah pada banner beranda.</small>
               </div>
               <div className="smk-form-group">
                 <label htmlFor="deskripsi_singkat">Deskripsi Singkat</label>

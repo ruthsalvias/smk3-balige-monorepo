@@ -118,7 +118,7 @@ export default function BerandaPage() {
               Tahun Ajaran {pengaturan?.tahun_ajaran || "—"}
             </span>
             <h1>
-              WEBSITE RESMI<br />
+              {pengaturan?.judul_hero || "WEBSITE RESMI"}<br />
               <span className="smk-hero-highlight">{pengaturan?.nama_sekolah || "SMK Negeri 3 Balige"}</span>
             </h1>
             <p>

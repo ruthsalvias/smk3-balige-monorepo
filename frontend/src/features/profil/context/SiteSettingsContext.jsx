@@ -5,6 +5,7 @@ const DEFAULT_PENGATURAN = {
   nama_sekolah: "SMK NEGERI 3 BALIGE",
   nama_singkat: "SMKN 3 Balige",
   tagline: "Excellence in Education",
+  judul_hero: "WEBSITE RESMI",
   deskripsi_singkat: "",
   tahun_ajaran: "",
   logo_url: null,
