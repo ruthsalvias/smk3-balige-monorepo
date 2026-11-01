@@ -61,6 +61,8 @@ export default function AdminAkunPage() {
   const [loading, setLoading] = useState(false);
   const [cari, setCari] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [filterKelas, setFilterKelas] = useState("");
+  const [filterJurusan, setFilterJurusan] = useState("");
   const [halaman, setHalaman] = useState(1);
 
   const [modalBuat, setModalBuat] = useState(false);
@@ -78,8 +80,8 @@ export default function AdminAkunPage() {
   const [memuatSiswa, setMemuatSiswa] = useState(false);
   const [opsiKelas, setOpsiKelas] = useState([]);
   const [opsiJurusan, setOpsiJurusan] = useState([]);
-  const [filterKelas, setFilterKelas] = useState("");
-  const [filterJurusan, setFilterJurusan] = useState("");
+  const [massalKelas, setMassalKelas] = useState("");
+  const [massalJurusan, setMassalJurusan] = useState("");
 
   const [terpilih, setTerpilih] = useState(() => new Set());
   const [modalHapusMassal, setModalHapusMassal] = useState(false);
@@ -170,9 +172,11 @@ export default function AdminAkunPage() {
         a.nama.toLowerCase().includes(kunci) ||
         (rombel?.kelas || "").toLowerCase().includes(kunci) ||
         (rombel?.jurusan || "").toLowerCase().includes(kunci);
-      return cocokRole && cocokKunci;
+      const cocokKelas = !filterKelas || rombel?.kelas === filterKelas;
+      const cocokJurusan = !filterJurusan || rombel?.jurusan === filterJurusan;
+      return cocokRole && cocokKunci && cocokKelas && cocokJurusan;
     });
-  }, [akun, cari, filterRole, rombelPerAkun]);
+  }, [akun, cari, filterRole, filterKelas, filterJurusan, rombelPerAkun]);
 
   const PER_HALAMAN = 50;
 
@@ -180,7 +184,7 @@ export default function AdminAkunPage() {
   // tidak berhenti di halaman yang sudah tidak ada isinya.
   useEffect(() => {
     setHalaman(1);
-  }, [cari, filterRole]);
+  }, [cari, filterRole, filterKelas, filterJurusan]);
 
   const totalHalaman = Math.max(1, Math.ceil(terfilter.length / PER_HALAMAN));
   const halamanAman = Math.min(halaman, totalHalaman);
@@ -275,8 +279,8 @@ export default function AdminAkunPage() {
 
   const bukaModalMassal = async () => {
     setModalMassal(true);
-    setFilterKelas("");
-    setFilterJurusan("");
+    setMassalKelas("");
+    setMassalJurusan("");
     // Data siswa diambil ulang supaya hasil impor terbaru ikut terbaca.
     await muatSiswa();
   };
@@ -291,10 +295,10 @@ export default function AdminAkunPage() {
     () =>
       semuaSiswa.filter(
         (s) =>
-          (!filterKelas || s.kelas === filterKelas) &&
-          (!filterJurusan || s.jurusan === filterJurusan),
+          (!massalKelas || s.kelas === massalKelas) &&
+          (!massalJurusan || s.jurusan === massalJurusan),
       ),
-    [semuaSiswa, filterKelas, filterJurusan],
+    [semuaSiswa, massalKelas, massalJurusan],
   );
 
   const tanpaNisn = useMemo(() => siswaTersaring.filter((s) => !s.nisn), [siswaTersaring]);
@@ -415,6 +419,7 @@ export default function AdminAkunPage() {
             className="smk-akun-input"
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
+            aria-label="Saring menurut role"
           >
             <option value="">Semua role</option>
             {ROLE_PILIHAN.map((r) => (
@@ -423,10 +428,66 @@ export default function AdminAkunPage() {
               </option>
             ))}
           </select>
+
+          <select
+            className="smk-akun-input"
+            value={filterKelas}
+            onChange={(e) => setFilterKelas(e.target.value)}
+            aria-label="Saring menurut kelas"
+          >
+            <option value="">Semua kelas</option>
+            {opsiKelas.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="smk-akun-input"
+            value={filterJurusan}
+            onChange={(e) => setFilterJurusan(e.target.value)}
+            aria-label="Saring menurut jurusan"
+          >
+            <option value="">Semua jurusan</option>
+            {opsiJurusan.map((j) => (
+              <option key={j} value={j}>
+                {j}
+              </option>
+            ))}
+          </select>
           <button className="smk-btn-primary smk-admin-btn-sm" onClick={bukaModalMassal}>
             Buat Akun Siswa Massal
           </button>
         </div>
+
+        {(cari.trim() || filterRole || filterKelas || filterJurusan) && (
+          <div className="ringkasan-filter">
+            <span className="ringkasan-filter-jumlah">
+              <strong>{terfilter.length}</strong> akun ditemukan
+            </span>
+            {cari.trim() && <span className="ringkasan-chip">Kata kunci: &quot;{cari.trim()}&quot;</span>}
+            {filterRole && (
+              <span className="ringkasan-chip">
+                Role: {ROLE_PILIHAN.find((r) => r.nilai === filterRole)?.label || filterRole}
+              </span>
+            )}
+            {filterKelas && <span className="ringkasan-chip">Kelas: {filterKelas}</span>}
+            {filterJurusan && <span className="ringkasan-chip">Jurusan: {filterJurusan}</span>}
+            <button
+              type="button"
+              className="ringkasan-reset"
+              onClick={() => {
+                setCari("");
+                setFilterRole("");
+                setFilterKelas("");
+                setFilterJurusan("");
+              }}
+            >
+              Hapus semua filter
+            </button>
+          </div>
+        )}
 
         <BilahPilihan
           jumlah={terpilih.size}
@@ -619,8 +680,8 @@ export default function AdminAkunPage() {
             <label htmlFor="massal-kelas">Kelas</label>
             <select
               id="massal-kelas"
-              value={filterKelas}
-              onChange={(e) => setFilterKelas(e.target.value)}
+              value={massalKelas}
+              onChange={(e) => setMassalKelas(e.target.value)}
             >
               <option value="">Semua kelas</option>
               {opsiKelas.map((k) => (
@@ -634,8 +695,8 @@ export default function AdminAkunPage() {
             <label htmlFor="massal-jurusan">Jurusan</label>
             <select
               id="massal-jurusan"
-              value={filterJurusan}
-              onChange={(e) => setFilterJurusan(e.target.value)}
+              value={massalJurusan}
+              onChange={(e) => setMassalJurusan(e.target.value)}
             >
               <option value="">Semua jurusan</option>
               {opsiJurusan.map((j) => (
