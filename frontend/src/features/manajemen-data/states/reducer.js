@@ -53,3 +53,21 @@ export function hasMoreGuruReducer(state = false, action) {
       return state;
   }
 }
+
+export function totalSiswaReducer(state = 0, action) {
+  switch (action.type) {
+    case ActionType.SET_TOTAL_SISWA:
+      return action.payload;
+    default:
+      return state;
+  }
+}
+
+export function totalGuruReducer(state = 0, action) {
+  switch (action.type) {
+    case ActionType.SET_TOTAL_GURU:
+      return action.payload;
+    default:
+      return state;
+  }
+}

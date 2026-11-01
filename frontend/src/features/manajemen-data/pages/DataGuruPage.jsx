@@ -15,6 +15,7 @@ import RowActionMenu from "../components/RowActionMenu.jsx";
 import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
 import KotakCari from "../../../components/KotakCari";
+import Paginasi from "../components/Paginasi.jsx";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -29,7 +30,7 @@ export default function DataGuruPage() {
   // Dibungkus useMemo agar identitasnya stabil saat dipakai sebagai dependensi efek.
   const guruStore = useSelector((s) => s.guru);
   const guru    = useMemo(() => guruStore ?? [], [guruStore]);
-  const hasMore = useSelector((s) => s.hasMoreGuru);
+  const totalDariServer = useSelector((s) => s.totalGuru);
 
   const [search,        setSearch]        = useState("");
   const [filterMapel,   setFilterMapel]   = useState("");
@@ -64,18 +65,22 @@ export default function DataGuruPage() {
       .catch(() => setTotalGuru(0));
   }, [versiData]);
 
+  // Daftar biasa: server yang memotong per halaman.
   useEffect(() => {
-    if (!modePencarian) {
-      dispatch(asyncGetGuru(offset, perPage));
-      return undefined;
-    }
+    if (modePencarian) return;
+    dispatch(asyncGetGuru(offset, perPage));
+  }, [dispatch, offset, modePencarian, versiData]);
 
+  // Pencarian dan penyaringan: seluruh hasil diambil sekali, pemotongan
+  // halaman dikerjakan di sisi klien.
+  useEffect(() => {
+    if (!modePencarian) return undefined;
     // Tunggu pengetikan berhenti sejenak supaya tidak memanggil API tiap huruf.
     const timer = setTimeout(() => {
       dispatch(asyncCariGuru({ q: kataKunci, mataPelajaran: filterMapel }));
     }, 350);
     return () => clearTimeout(timer);
-  }, [dispatch, offset, modePencarian, kataKunci, filterMapel, versiData]);
+  }, [dispatch, modePencarian, kataKunci, filterMapel, versiData]);
 
   // Reset ke halaman 1 saat filter berubah
   useEffect(() => {
@@ -128,10 +133,11 @@ export default function DataGuruPage() {
     setDeleteModal({ open: false, id: null, nama: "" });
   };
 
-  // Penyaringan sudah dikerjakan server, jadi baris ditampilkan apa adanya.
   const mapelList = opsiMapel;
-  const filtered  = guru;
-  const nomorAwal = modePencarian ? 0 : offset;
+
+  const totalDitemukan = modePencarian ? guru.length : totalDariServer;
+  const filtered  = modePencarian ? guru.slice(offset, offset + perPage) : guru;
+  const nomorAwal = offset;
 
   // ── Pilih banyak baris untuk dihapus sekaligus ────────────────
   const idTampil = useMemo(() => filtered.map((item) => item.id), [filtered]);
@@ -216,6 +222,26 @@ export default function DataGuruPage() {
               </select>
             </div>
           </div>
+
+          {modePencarian && (
+            <div className="ringkasan-filter">
+              <span className="ringkasan-filter-jumlah">
+                <strong>{totalDitemukan}</strong> guru ditemukan
+              </span>
+              {kataKunci && <span className="ringkasan-chip">Kata kunci: &quot;{kataKunci}&quot;</span>}
+              {filterMapel && <span className="ringkasan-chip">Mata pelajaran: {filterMapel}</span>}
+              <button
+                type="button"
+                className="ringkasan-reset"
+                onClick={() => {
+                  setSearch("");
+                  setFilterMapel("");
+                }}
+              >
+                Hapus semua filter
+              </button>
+            </div>
+          )}
 
           {/* BILAH PILIHAN */}
           <BilahPilihan
@@ -319,31 +345,14 @@ export default function DataGuruPage() {
               </a>
             </div>
 
-            {modePencarian ? (
-              <div className="pagination">
-                <span style={{ fontSize: "13px", color: "#6b7280" }}>
-                  {filtered.length} guru ditemukan
-                </span>
-              </div>
-            ) : (
-              <div className="pagination">
-                <button
-                  onClick={() => setOffset((prev) => Math.max(0, prev - perPage))}
-                  disabled={offset === 0}
-                  className="pagination-btn"
-                >
-                  ‹ Prev
-                </button>
-                <span className="pagination-btn active">{currentPage}</span>
-                <button
-                  onClick={() => setOffset((prev) => prev + perPage)}
-                  disabled={!hasMore}
-                  className="pagination-btn"
-                >
-                  Next ›
-                </button>
-              </div>
-            )}
+            <Paginasi
+              halaman={currentPage}
+              totalData={totalDitemukan}
+              perHalaman={perPage}
+              jumlahTampil={filtered.length}
+              label="guru"
+              onPindah={(n) => setOffset(Math.max(0, (n - 1) * perPage))}
+            />
           </div>
 
           <div style={{ borderTop: "1px solid #e5e7eb", margin: "32px 0" }} />

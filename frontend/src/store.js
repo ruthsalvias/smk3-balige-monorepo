@@ -24,7 +24,9 @@ import {
   statsSiswaReducer,
   manajemenLoadingReducer,
   hasMoreSiswaReducer, 
-  hasMoreGuruReducer,  
+  hasMoreGuruReducer,
+  totalSiswaReducer,
+  totalGuruReducer,
 } from "./features/manajemen-data/states/reducer";
 
 const store = configureStore({
@@ -47,6 +49,8 @@ const store = configureStore({
 
     hasMoreSiswa: hasMoreSiswaReducer,
     hasMoreGuru:  hasMoreGuruReducer,
+    totalSiswa:   totalSiswaReducer,
+    totalGuru:    totalGuruReducer,
     portofolio: portofolioReducer,
 
     // Berita & Informasi

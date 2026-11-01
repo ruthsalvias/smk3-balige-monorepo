@@ -1168,3 +1168,102 @@
     color: #64748b;
   }
 }
+
+/* ── Navigasi halaman tabel ─────────────────────────────────── */
+
+.paginasi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.paginasi-info {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.paginasi-info strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.paginasi-info-halaman {
+  color: #6b7280;
+}
+
+.paginasi-tombol {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.paginasi-elipsis {
+  padding: 0 2px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .paginasi {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+/* ── Ringkasan penyaringan di atas tabel ────────────────────── */
+
+.ringkasan-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #eff6ff;
+}
+
+.ringkasan-filter-jumlah {
+  font-size: 13.5px;
+  color: #1e3a8a;
+}
+
+.ringkasan-filter-jumlah strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ringkasan-chip {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.ringkasan-reset {
+  margin-left: auto;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ringkasan-reset:hover {
+  color: #1e3a8a;
+}

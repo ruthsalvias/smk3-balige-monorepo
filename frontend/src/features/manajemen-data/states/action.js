@@ -8,6 +8,8 @@ export const ActionType = {
   SET_LOADING: "SET_LOADING",
   SET_HAS_MORE_SISWA: "SET_HAS_MORE_SISWA",
   SET_HAS_MORE_GURU: "SET_HAS_MORE_GURU",
+  SET_TOTAL_SISWA: "SET_TOTAL_SISWA",
+  SET_TOTAL_GURU: "SET_TOTAL_GURU",
 };
 
 // =======================
@@ -36,6 +38,10 @@ export const setLoading = (status) => ({
 export const setHasMoreSiswa = (val) => ({ type: ActionType.SET_HAS_MORE_SISWA, payload: val });
 
 export const setHasMoreGuru  = (val) => ({ type: ActionType.SET_HAS_MORE_GURU,  payload: val });
+
+// Jumlah seluruh data yang cocok, dipakai untuk menghitung jumlah halaman.
+export const setTotalSiswa = (val) => ({ type: ActionType.SET_TOTAL_SISWA, payload: val });
+export const setTotalGuru  = (val) => ({ type: ActionType.SET_TOTAL_GURU,  payload: val });
 // =======================
 // SISWA
 // =======================
@@ -46,8 +52,10 @@ export function asyncGetSiswa(offset = 0, limit = 20) {
       const data = await manajemenApi.getSiswaPage(limit, offset);
       dispatch(setSiswa(data.data.siswa));
       dispatch(setHasMoreSiswa(data.data.hasMore));
+      dispatch(setTotalSiswa(Number(data.data.total) || 0));
     } catch (e) {
       dispatch(setSiswa([]));
+      dispatch(setTotalSiswa(0));
       showErrorDialog(e.message);
     } finally {
       dispatch(setLoading(false));
@@ -66,6 +74,7 @@ export function asyncCariSiswa(params = {}) {
       const data = await manajemenApi.searchSiswa(params);
       dispatch(setSiswa(data.data.siswa));
       dispatch(setHasMoreSiswa(false));
+      dispatch(setTotalSiswa(Number(data.data.total) || 0));
     } catch (e) {
       dispatch(setSiswa([]));
       showErrorDialog(e.message);
@@ -142,6 +151,7 @@ export function asyncGetGuru(offset = 0, limit = 20) {
       const data = await manajemenApi.getGuruPage(limit, offset);
       dispatch(setGuru(data.data.guru));
       dispatch(setHasMoreGuru(data.data.hasMore));
+      dispatch(setTotalGuru(Number(data.data.total) || 0));
     } catch (e) {
       dispatch(setGuru([]));
       showErrorDialog(e.message);
@@ -159,6 +169,7 @@ export function asyncCariGuru(params = {}) {
       const data = await manajemenApi.searchGuru(params);
       dispatch(setGuru(data.data.guru));
       dispatch(setHasMoreGuru(false));
+      dispatch(setTotalGuru(Number(data.data.total) || 0));
     } catch (e) {
       dispatch(setGuru([]));
       showErrorDialog(e.message);

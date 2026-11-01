@@ -16,6 +16,7 @@ import RowActionMenu from "../components/RowActionMenu.jsx";
 import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
 import KotakCari from "../../../components/KotakCari";
+import Paginasi from "../components/Paginasi.jsx";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -25,13 +26,13 @@ import KonfirmasiHapusMassal, {
 export default function DataSiswaPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const totalSiswa = useSelector((s) => s.totalSiswa);
   const bukaDetail = (item) => navigate(adminPath(`/data/siswa/${item.id}`));
 
   // Dibungkus useMemo agar identitasnya stabil saat dipakai sebagai dependensi efek.
   const siswaStore = useSelector((s) => s.siswa);
   const siswa  = useMemo(() => siswaStore ?? [], [siswaStore]);
   const stats  = useSelector((s) => s.statsSiswa);
-  const hasMore = useSelector((s) => s.hasMoreSiswa);
 
   const [search,        setSearch]        = useState("");
   const [filterKelas,   setFilterKelas]   = useState("");
@@ -64,12 +65,17 @@ export default function DataSiswaPage() {
     dispatch(asyncGetStatsSiswa());
   }, [dispatch]);
 
+  // Daftar biasa: server yang memotong per halaman.
   useEffect(() => {
-    if (!modePencarian) {
-      dispatch(asyncGetSiswa(offset, perPage));
-      return undefined;
-    }
+    if (modePencarian) return;
+    dispatch(asyncGetSiswa(offset, perPage));
+  }, [dispatch, offset, modePencarian, versiData]);
 
+  // Pencarian dan penyaringan: seluruh hasil diambil sekali, pemotongan
+  // halaman dikerjakan di sisi klien supaya pindah halaman tidak memanggil
+  // API berulang kali.
+  useEffect(() => {
+    if (!modePencarian) return undefined;
     // Tunggu pengetikan berhenti sejenak supaya tidak memanggil API tiap huruf.
     const timer = setTimeout(() => {
       dispatch(
@@ -77,7 +83,7 @@ export default function DataSiswaPage() {
       );
     }, 350);
     return () => clearTimeout(timer);
-  }, [dispatch, offset, modePencarian, kataKunci, filterKelas, filterJurusan, versiData]);
+  }, [dispatch, modePencarian, kataKunci, filterKelas, filterJurusan, versiData]);
 
   // Reset ke halaman 1 saat filter berubah
   useEffect(() => {
@@ -132,11 +138,14 @@ export default function DataSiswaPage() {
     setDeleteModal({ open: false, id: null, nama: "" });
   };
 
-  // Penyaringan sudah dikerjakan server, jadi baris ditampilkan apa adanya.
   const kelasList   = opsiKelas;
   const jurusanList = opsiJurusan;
-  const filtered    = siswa;
-  const nomorAwal   = modePencarian ? 0 : offset;
+
+  // Saat menyaring, seluruh hasil sudah ada di memori; saat tidak, isi `siswa`
+  // memang sudah sepotong halaman dari server.
+  const totalDitemukan = modePencarian ? siswa.length : totalSiswa;
+  const filtered    = modePencarian ? siswa.slice(offset, offset + perPage) : siswa;
+  const nomorAwal   = offset;
 
   // ── Pilih banyak baris untuk dihapus sekaligus ────────────────
   const idTampil = useMemo(() => filtered.map((item) => item.id), [filtered]);
@@ -238,6 +247,28 @@ export default function DataSiswaPage() {
               </select>
             </div>
           </div>
+
+          {modePencarian && (
+            <div className="ringkasan-filter">
+              <span className="ringkasan-filter-jumlah">
+                <strong>{totalDitemukan}</strong> siswa ditemukan
+              </span>
+              {kataKunci && <span className="ringkasan-chip">Kata kunci: &quot;{kataKunci}&quot;</span>}
+              {filterKelas && <span className="ringkasan-chip">Kelas: {filterKelas}</span>}
+              {filterJurusan && <span className="ringkasan-chip">Jurusan: {filterJurusan}</span>}
+              <button
+                type="button"
+                className="ringkasan-reset"
+                onClick={() => {
+                  setSearch("");
+                  setFilterKelas("");
+                  setFilterJurusan("");
+                }}
+              >
+                Hapus semua filter
+              </button>
+            </div>
+          )}
 
           {/* BILAH PILIHAN */}
           <BilahPilihan
@@ -349,31 +380,14 @@ export default function DataSiswaPage() {
               </a>
             </div>
 
-            {modePencarian ? (
-              <div className="pagination">
-                <span style={{ fontSize: "13px", color: "#6b7280" }}>
-                  {filtered.length} siswa ditemukan
-                </span>
-              </div>
-            ) : (
-              <div className="pagination">
-                <button
-                  onClick={() => setOffset((prev) => Math.max(0, prev - perPage))}
-                  disabled={offset === 0}
-                  className="pagination-btn"
-                >
-                  ‹ Prev
-                </button>
-                <span className="pagination-btn active">{currentPage}</span>
-                <button
-                  onClick={() => setOffset((prev) => prev + perPage)}
-                  disabled={!hasMore}
-                  className="pagination-btn"
-                >
-                  Next ›
-                </button>
-              </div>
-            )}
+            <Paginasi
+              halaman={currentPage}
+              totalData={totalDitemukan}
+              perHalaman={perPage}
+              jumlahTampil={filtered.length}
+              label="siswa"
+              onPindah={(n) => setOffset(Math.max(0, (n - 1) * perPage))}
+            />
           </div>
 
           <div style={{ borderTop: "1px solid #e5e7eb", margin: "32px 0" }} />
