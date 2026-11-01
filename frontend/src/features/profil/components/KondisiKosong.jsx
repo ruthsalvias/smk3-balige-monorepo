@@ -1,0 +1,24 @@
+import Icon from "../../../components/Icon";
+
+/**
+ * Tampilan untuk bagian halaman profil yang datanya belum diisi admin.
+ *
+ * Sebelumnya bagian Struktur Organisasi menampilkan bagan contoh berisi
+ * "Kepala Sekolah", "Waka Kurikulum", dan seterusnya. Bagan itu tidak berasal
+ * dari data sekolah mana pun, tetapi pengunjung tidak punya cara membedakannya
+ * dari bagan asli — persis masalah yang dikeluhkan.
+ *
+ * Bagian lain memakai satu baris teks abu-abu yang mudah terlewat. Keduanya
+ * kini memakai tampilan yang sama: jelas kosong, dan tidak menyesatkan.
+ */
+export default function KondisiKosong({ ikon = "fileText", judul, keterangan }) {
+  return (
+    <div className="smk-kosong">
+      <span className="smk-kosong-ikon" aria-hidden="true">
+        <Icon name={ikon} size={28} />
+      </span>
+      <p className="smk-kosong-judul">{judul}</p>
+      {keterangan && <p className="smk-kosong-ket">{keterangan}</p>}
+    </div>
+  );
+}

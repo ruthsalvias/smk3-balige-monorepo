@@ -7,6 +7,7 @@ import {
 } from "../states/action";
 import Icon from "../../../components/Icon";
 import Reveal from "../../../components/Reveal";
+import KondisiKosong from "../components/KondisiKosong";
 import { mediaUrl } from "../../admin/components/AdminComponents";
 import { useSiteSettings } from "../context/SiteSettingsContext";
 import { useHeroSlider } from "../hooks/useHeroSlider";
@@ -257,34 +258,11 @@ export default function ProfilPage() {
               style={{ maxWidth: "100%", borderRadius: "12px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}
             />
           ) : (
-            <div className="smk-org-chart">
-              <div className="smk-org-row">
-                <div className="smk-org-box smk-org-primary">Kepala Sekolah</div>
-              </div>
-              <div className="smk-org-connector-v" />
-              <div className="smk-org-row">
-                <div className="smk-org-box smk-org-primary">
-                  Wakil Kepala Sekolah
-                </div>
-              </div>
-              <div className="smk-org-connector-v" />
-              <div className="smk-org-row smk-org-row-multi">
-                <div className="smk-org-box">Waka Kurikulum</div>
-                <div className="smk-org-box">Waka Kesiswaan</div>
-                <div className="smk-org-box">Waka Sarpras</div>
-                <div className="smk-org-box">Waka Humas</div>
-              </div>
-              <div className="smk-org-connector-v" />
-              <div className="smk-org-row smk-org-row-multi">
-                <div className="smk-org-box smk-org-small">Kepala Tata Usaha</div>
-                <div className="smk-org-box smk-org-small">Dewan Guru</div>
-                <div className="smk-org-box smk-org-small">Wali Kelas</div>
-              </div>
-              <div className="smk-org-connector-v" />
-              <div className="smk-org-row">
-                <div className="smk-org-box smk-org-student">SISWA</div>
-              </div>
-            </div>
+            <KondisiKosong
+              ikon="sitemap"
+              judul="Bagan struktur organisasi belum tersedia"
+              keterangan="Bagan akan ditampilkan di halaman ini setelah pihak sekolah mengunggahnya."
+            />
           )}
         </div>
       </section>
@@ -313,7 +291,11 @@ export default function ProfilPage() {
                 </Reveal>
               ))
             ) : (
-              <p className="smk-state-text">Data fasilitas belum tersedia.</p>
+              <KondisiKosong
+                ikon="building"
+                judul="Data fasilitas belum tersedia"
+                keterangan="Daftar fasilitas dan sarana belajar akan muncul di sini setelah dilengkapi pihak sekolah."
+              />
             )}
           </div>
         </div>
@@ -361,7 +343,11 @@ export default function ProfilPage() {
                 );
               })
             ) : (
-              <p className="smk-state-text">Data prestasi belum tersedia.</p>
+              <KondisiKosong
+                ikon="trophy"
+                judul="Data prestasi belum tersedia"
+                keterangan="Prestasi siswa dan sekolah akan ditampilkan di sini setelah dilengkapi pihak sekolah."
+              />
             )}
           </div>
         </div>
@@ -394,7 +380,11 @@ export default function ProfilPage() {
                 </Reveal>
               ))
             ) : (
-              <p className="smk-state-text">Data program keahlian belum tersedia.</p>
+              <KondisiKosong
+                ikon="graduation"
+                judul="Data program keahlian belum tersedia"
+                keterangan="Daftar program keahlian akan ditampilkan di sini setelah dilengkapi pihak sekolah."
+              />
             )}
           </div>
         </div>
@@ -436,7 +426,11 @@ export default function ProfilPage() {
                 </Reveal>
               ))
             ) : (
-              <p className="smk-state-text">Data mitra kerjasama belum tersedia.</p>
+              <KondisiKosong
+                ikon="handshake"
+                judul="Data mitra kerjasama belum tersedia"
+                keterangan="Daftar dunia usaha dan industri mitra sekolah akan ditampilkan di sini setelah dilengkapi."
+              />
             )}
           </div>
         </div>

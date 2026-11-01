@@ -2323,8 +2323,6 @@ body {
   .smk-berita-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .smk-berita-filters::-webkit-scrollbar { height: 4px; }
 
-  .smk-org-row-multi { flex-direction: column; align-items: center; }
-  .smk-org-box { width: 100%; max-width: 280px; }
 
   .smk-detail-body,
   .smk-richtext { font-size: 0.95rem; }
@@ -2799,3 +2797,51 @@ html { overflow-x: hidden; }
   }
 }
 
+
+/* ── Bagian yang datanya belum diisi admin ──────────────────── */
+
+.smk-kosong {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 520px;
+  margin: 8px auto;
+  padding: 36px 28px;
+  text-align: center;
+  border: 1.5px dashed var(--p-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.smk-kosong-ikon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--p-gold-soft);
+  color: var(--p-gold-deep);
+}
+
+.smk-kosong-judul {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--p-navy-800);
+}
+
+.smk-kosong-ket {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--p-muted);
+}
+
+@media (max-width: 600px) {
+  .smk-kosong {
+    padding: 28px 18px;
+  }
+}
