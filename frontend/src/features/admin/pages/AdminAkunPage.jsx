@@ -79,7 +79,62 @@ export default function AdminAkunPage() {
   useEffect(() => {
     if (!bolehAkses) return;
     muatAkun();
+    muatSiswa();
   }, [bolehAkses]);
+
+  const muatSiswa = async () => {
+    setMemuatSiswa(true);
+    try {
+      const [resSiswa, resOpsi] = await Promise.all([
+        manajemenApi.getSiswaRingkas(),
+        manajemenApi.getOpsiFilterSiswa(),
+      ]);
+      const daftar = resSiswa?.data?.siswa || [];
+      setSemuaSiswa(
+        daftar.map((s) => ({
+          id: s.id,
+          nisn: String(s.nisn || "").trim(),
+          nis: String(s.nis || "").trim(),
+          nama: s.namaLengkap || "",
+          kelas: String(s.kelas || "").trim(),
+          jurusan: String(s.jurusan || "").trim(),
+        })),
+      );
+      setOpsiKelas(resOpsi?.data?.kelas || []);
+      setOpsiJurusan(resOpsi?.data?.jurusan || []);
+    } catch (err) {
+      showErrorDialog(err.message || "Gagal memuat data siswa");
+      setSemuaSiswa([]);
+      setOpsiKelas([]);
+      setOpsiJurusan([]);
+    } finally {
+      setMemuatSiswa(false);
+    }
+  };
+
+  /**
+   * Akun siswa dipasangkan ke data siswa lewat username, yang berisi NISN.
+   * NIS ikut dicocokkan supaya akun lama yang dibuat sebelum perubahan ini
+   * tetap mengenali rombelnya.
+   */
+  const rombelPerAkun = useMemo(() => {
+    const peta = new Map();
+    semuaSiswa.forEach((s) => {
+      const isi = { kelas: s.kelas, jurusan: s.jurusan };
+      if (s.nisn) peta.set(s.nisn.toLowerCase(), isi);
+      if (s.nis && !peta.has(s.nis.toLowerCase())) peta.set(s.nis.toLowerCase(), isi);
+    });
+    return peta;
+  }, [semuaSiswa]);
+
+  const rombelDari = (item) => {
+    if (!item.roles.includes("siswa")) return null;
+    return (
+      rombelPerAkun.get(String(item.username || "").toLowerCase()) ||
+      rombelPerAkun.get(String(item.nis || "").toLowerCase()) ||
+      null
+    );
+  };
 
   const muatAkun = async () => {
     setLoading(true);
@@ -98,13 +153,16 @@ export default function AdminAkunPage() {
     const kunci = cari.trim().toLowerCase();
     return akun.filter((a) => {
       const cocokRole = !filterRole || a.roles.includes(filterRole);
+      const rombel = rombelDari(a);
       const cocokKunci =
         !kunci ||
         a.username.toLowerCase().includes(kunci) ||
-        a.nama.toLowerCase().includes(kunci);
+        a.nama.toLowerCase().includes(kunci) ||
+        (rombel?.kelas || "").toLowerCase().includes(kunci) ||
+        (rombel?.jurusan || "").toLowerCase().includes(kunci);
       return cocokRole && cocokKunci;
     });
-  }, [akun, cari, filterRole]);
+  }, [akun, cari, filterRole, rombelPerAkun]);
 
   // ── Pilih banyak akun untuk dihapus sekaligus ─────────────────
   // Akun master admin dan akun yang sedang dipakai tidak bisa dipilih.
@@ -191,37 +249,10 @@ export default function AdminAkunPage() {
 
   const bukaModalMassal = async () => {
     setModalMassal(true);
-    setMemuatSiswa(true);
     setFilterKelas("");
     setFilterJurusan("");
-    try {
-      // Endpoint ringkas dipakai karena /siswa biasa dibatasi dan diam-diam
-      // memotong daftar saat siswanya lebih banyak dari batas itu.
-      const [resSiswa, resOpsi] = await Promise.all([
-        manajemenApi.getSiswaRingkas(),
-        manajemenApi.getOpsiFilterSiswa(),
-      ]);
-      const daftar = resSiswa?.data?.siswa || [];
-      setSemuaSiswa(
-        daftar.map((s) => ({
-          id: s.id,
-          nisn: String(s.nisn || "").trim(),
-          nis: String(s.nis || "").trim(),
-          nama: s.namaLengkap || "",
-          kelas: String(s.kelas || "").trim(),
-          jurusan: String(s.jurusan || "").trim(),
-        })),
-      );
-      setOpsiKelas(resOpsi?.data?.kelas || []);
-      setOpsiJurusan(resOpsi?.data?.jurusan || []);
-    } catch (err) {
-      showErrorDialog(err.message || "Gagal memuat data siswa");
-      setSemuaSiswa([]);
-      setOpsiKelas([]);
-      setOpsiJurusan([]);
-    } finally {
-      setMemuatSiswa(false);
-    }
+    // Data siswa diambil ulang supaya hasil impor terbaru ikut terbaca.
+    await muatSiswa();
   };
 
   // Username akun siswa memakai NISN; data Dapodik jarang mengisi NIS.
@@ -349,7 +380,7 @@ export default function AdminAkunPage() {
         <div className="smk-akun-toolbar">
           <input
             className="smk-akun-input"
-            placeholder="Cari username atau nama..."
+            placeholder="Cari username, nama, kelas, atau jurusan..."
             value={cari}
             onChange={(e) => setCari(e.target.value)}
           />
@@ -395,6 +426,7 @@ export default function AdminAkunPage() {
             "Username",
             "Nama",
             "Role",
+            "Kelas / Jurusan",
             "Status Password",
             "Dibuat",
             "Status",
@@ -419,6 +451,14 @@ export default function AdminAkunPage() {
               <td>{item.username}</td>
               <td>{item.nama}</td>
               <td>{item.roles.join(", ") || "-"}</td>
+              <td>
+                {(() => {
+                  const rombel = rombelDari(item);
+                  if (!rombel) return <span style={{ color: "#cbd5e1" }}>—</span>;
+                  const teks = [rombel.kelas, rombel.jurusan].filter(Boolean).join(" · ");
+                  return teks || <span style={{ color: "#cbd5e1" }}>—</span>;
+                })()}
+              </td>
               <td>
                 {item.passwordDiubahSendiri ? (
                   <span className="smk-admin-badge smk-admin-badge-blue">
