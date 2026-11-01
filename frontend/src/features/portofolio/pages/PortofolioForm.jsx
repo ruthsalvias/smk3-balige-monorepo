@@ -80,9 +80,9 @@ function PortofolioForm() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validasi ukuran file (misal maksimal 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        setErrorMessage('Ukuran file terlalu besar! Maksimal adalah 2MB.');
+      // Validasi ukuran file (maksimal 10MB, sama dengan batas di backend)
+      if (file.size > 10 * 1024 * 1024) {
+        setErrorMessage('Ukuran file terlalu besar! Maksimal adalah 10MB.');
         return;
       }
       setImageFile(file);
@@ -317,7 +317,7 @@ function PortofolioForm() {
                 >
                   {imagePreview ? 'Ganti Gambar' : 'Pilih File Gambar'}
                 </button>
-                <span style={{ fontSize: '11px', color: '#6b7280' }}>Format: JPG, PNG (Maks. 2MB)</span>
+                <span style={{ fontSize: '11px', color: '#6b7280' }}>Format: JPG, PNG (Maks. 10MB)</span>
               </div>
             </div>
 

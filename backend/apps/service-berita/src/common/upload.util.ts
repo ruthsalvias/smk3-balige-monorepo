@@ -22,7 +22,7 @@ export function imageUploadOptions(folder: string) {
         cb(null, `${folder}-${unique}${extname(file.originalname).toLowerCase()}`);
       },
     }),
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (_req: any, file: any, cb: any) => {
       if (!ALLOWED_MIME.test(file.mimetype)) {
         return cb(

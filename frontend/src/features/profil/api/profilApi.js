@@ -15,6 +15,14 @@ import apiHelper, { BASE_URL } from "../../../helpers/apiHelper";
 async function handle(res) {
   if (res.ok) return res.json();
 
+  // 413 bisa datang dari dua arah: reverse proxy (badan HTML) atau Multer
+  // (JSON berbahasa Inggris "File too large"). Pesannya diseragamkan di sini.
+  if (res.status === 413) {
+    throw new Error(
+      "Ukuran berkas terlalu besar. Maksimal 10 MB — perkecil berkas lalu coba lagi.",
+    );
+  }
+
   const mentah = await res.text().catch(() => "");
   let pesan = "";
   try {
@@ -25,9 +33,7 @@ async function handle(res) {
   }
 
   if (!pesan) {
-    if (res.status === 413) {
-      pesan = "Ukuran berkas terlalu besar untuk diunggah. Perkecil gambar lalu coba lagi.";
-    } else if (res.status === 502 || res.status === 503 || res.status === 504) {
+    if (res.status === 502 || res.status === 503 || res.status === 504) {
       pesan = "Server tidak merespons saat memproses permintaan. Coba lagi beberapa saat.";
     } else if (res.status === 401 || res.status === 403) {
       pesan = "Sesi Anda sudah berakhir atau tidak punya izin. Silakan masuk kembali.";

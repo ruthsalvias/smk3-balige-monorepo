@@ -6,7 +6,7 @@
 // unggahan tetap lolos tanpa bergantung pada konfigurasi proxy.
 
 /** Batas ukuran yang ditampilkan ke pengguna dan dipakai sebagai penolakan akhir. */
-export const MAKS_UKURAN_MB = 5;
+export const MAKS_UKURAN_MB = 10;
 
 /** Sisi terpanjang hasil pengecilan. Cukup tajam untuk ditampilkan di web. */
 const MAKS_SISI = 1920;
