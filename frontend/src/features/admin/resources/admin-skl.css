@@ -132,50 +132,18 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.75rem;
+  /* Tumbuh mengisi sisa baris supaya tombol tampilan tidak terdorong turun. */
+  flex: 1 1 auto;
 }
 
-.skl-search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.skl-search-input {
-  padding: 0.48rem 2.2rem 0.48rem 2.2rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  font-size: 0.88rem;
-  background: #f8fafc;
-  width: 220px;
-  transition: all 0.2s ease;
-}
-
-.skl-search-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: #ffffff;
-  width: 280px;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
-
-.skl-search-icon {
-  position: absolute;
-  left: 0.7rem;
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-.skl-search-clear {
-  position: absolute;
-  right: 0.6rem;
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
+/* Kotak cari boleh menyusut di bilah ini karena berbagi baris dengan
+   dua tombol dan pengalih tampilan. */
+.skl-toolbar-actions .kotak-cari {
+  flex: 1 1 220px;
+  min-width: 190px;
+  max-width: 380px;
 }
 
 .skl-btn {

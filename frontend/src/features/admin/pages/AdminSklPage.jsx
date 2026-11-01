@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import Icon from "../../../components/Icon";
+import KotakCari from "../../../components/KotakCari";
 import {
   showConfirmDialog,
   showErrorDialog,
@@ -101,27 +102,48 @@ export default function AdminSklPage() {
     loadStats();
   }, []);
 
-  // Search handler
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      setSearching(false);
-      loadContent(currentFolderId);
+  /**
+   * Pencarian berjalan sambil diketik, sama seperti tabel lain di panel admin.
+   * Sebelumnya hasil baru muncul setelah menekan Enter, sehingga daftar yang
+   * terlihat tidak sesuai dengan isi kotak pencarian.
+   *
+   * Jeda singkat mencegah satu permintaan ke server untuk setiap huruf.
+   */
+  useEffect(() => {
+    const kunci = searchQuery.trim();
+
+    if (!kunci) {
+      if (searching) {
+        setSearching(false);
+        loadContent(currentFolderId);
+      }
       return;
     }
 
-    setLoading(true);
-    setSearching(true);
-    try {
-      const result = await searchSkl(searchQuery.trim());
-      setFolders(result.folders || []);
-      setFiles(result.files || []);
-    } catch (err) {
-      showErrorDialog(err.message || "Pencarian gagal");
-    } finally {
-      setLoading(false);
-    }
-  };
+    let berlaku = true;
+    const jeda = setTimeout(async () => {
+      setLoading(true);
+      setSearching(true);
+      try {
+        const result = await searchSkl(kunci);
+        if (!berlaku) return;
+        setFolders(result.folders || []);
+        setFiles(result.files || []);
+      } catch (err) {
+        if (berlaku) showErrorDialog(err.message || "Pencarian gagal");
+      } finally {
+        if (berlaku) setLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      berlaku = false;
+      clearTimeout(jeda);
+    };
+    // currentFolderId sengaja tidak diikutkan: berpindah folder sudah
+    // mengosongkan kotak pencarian lewat enterFolder.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const clearSearch = () => {
     setSearchQuery("");
@@ -420,23 +442,14 @@ export default function AdminSklPage() {
 
           {/* Action Buttons & Search */}
           <div className="skl-toolbar-actions">
-            <form onSubmit={handleSearch} className="skl-search-box">
-              <span className="skl-search-icon">
-                <Icon name="search" size={16} />
-              </span>
-              <input
-                type="text"
-                className="skl-search-input"
-                placeholder="Cari file atau folder..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button type="button" className="skl-search-clear" onClick={clearSearch}>
-                  <Icon name="close" size={14} />
-                </button>
-              )}
-            </form>
+            <KotakCari
+              nilai={searchQuery}
+              onUbah={setSearchQuery}
+              onBersihkan={clearSearch}
+              placeholder="Cari nama file atau folder..."
+              jumlah={searching ? folders.length + files.length : null}
+              labelJumlah="hasil"
+            />
 
             <button
               type="button"

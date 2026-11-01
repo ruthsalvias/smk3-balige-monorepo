@@ -13,6 +13,8 @@ import "./KotakCari.css";
  *   memanjang berlebihan di layar lebar.
  * - Tombol silang membersihkan isian; tombol Escape melakukan hal yang sama.
  * - `jumlah` menampilkan banyaknya hasil, supaya jelas pencarian sedang aktif.
+ * - `onBersihkan` dipakai halaman yang perlu memuat ulang isinya saat
+ *   pencarian dibatalkan, bukan sekadar mengosongkan kotak.
  */
 export default function KotakCari({
   nilai = "",
@@ -21,11 +23,13 @@ export default function KotakCari({
   jumlah = null,
   labelJumlah = "hasil",
   autoFocus = false,
+  onBersihkan,
 }) {
   const inputRef = useRef(null);
 
   const bersihkan = () => {
-    onUbah?.("");
+    if (onBersihkan) onBersihkan();
+    else onUbah?.("");
     inputRef.current?.focus();
   };
 
