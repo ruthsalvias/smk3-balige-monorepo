@@ -6,6 +6,7 @@ import { beritaMediaUrl } from "../../admin/components/AdminComponents";
 import { asyncLoadAllBeritaData } from "../../berita/states/action";
 import { useSiteSettings } from "../context/SiteSettingsContext";
 import Icon from "../../../components/Icon";
+import KondisiKosong from "../components/KondisiKosong";
 import Reveal from "../../../components/Reveal";
 
 const TABS = [
@@ -180,11 +181,15 @@ export default function BeritaPage() {
           {loading ? (
             <p className="smk-state-text">Memuat informasi…</p>
           ) : items.length === 0 ? (
-            <p className="smk-state-text">
-              {query
-                ? `Tidak ada hasil untuk "${query}".`
-                : "Belum ada informasi pada kategori ini."}
-            </p>
+            <KondisiKosong
+              ikon={query ? "search" : "news"}
+              judul={query ? `Tidak ada hasil untuk "${query}"` : "Belum ada informasi pada kategori ini"}
+              keterangan={
+                query
+                  ? "Coba kata kunci lain, atau pilih kategori yang berbeda."
+                  : "Informasi pada kategori ini akan tampil di sini begitu dipublikasikan."
+              }
+            />
           ) : (
             <>
               {/* BERITA UTAMA + AGENDA */}
@@ -249,7 +254,11 @@ export default function BeritaPage() {
                     <Icon name="calendar" size={18} /> Agenda Sekolah
                   </h2>
                   {agendaMendatang.length === 0 ? (
-                    <p className="smk-state-text">Belum ada agenda terjadwal.</p>
+                    <KondisiKosong
+                      ringkas
+                      ikon="calendar"
+                      judul="Belum ada agenda terjadwal"
+                    />
                   ) : (
                     <div className="smk-agenda-list">
                       {agendaMendatang.map((a) => (
@@ -294,9 +303,11 @@ export default function BeritaPage() {
                 </h2>
 
                 {lainnya.length === 0 ? (
-                  <p className="smk-state-text">
-                    Belum ada informasi lain untuk ditampilkan.
-                  </p>
+                  <KondisiKosong
+                    ringkas
+                    ikon="news"
+                    judul="Belum ada informasi lain untuk ditampilkan"
+                  />
                 ) : (
                   <div className="smk-berita-grid">
                     {lainnya.map((item, idx) => (

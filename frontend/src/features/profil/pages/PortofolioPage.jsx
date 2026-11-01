@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import ProfilLayout from "../layouts/ProfilLayout";
 import Icon from "../../../components/Icon";
+import KondisiKosong from "../components/KondisiKosong";
 import Reveal from "../../../components/Reveal";
 import portofolioApi, {
   getPortofolioImageUrl,
@@ -135,11 +136,19 @@ export default function PortofolioPage() {
           ) : error ? (
             <p className="smk-state-text">{error}</p>
           ) : filtered.length === 0 ? (
-            <p className="smk-state-text">
-              {query || jurusan !== "Semua"
-                ? "Tidak ada karya yang cocok dengan pencarian."
-                : "Belum ada portofolio yang dipublikasikan."}
-            </p>
+            <KondisiKosong
+              ikon={query || jurusan !== "Semua" ? "search" : "star"}
+              judul={
+                query || jurusan !== "Semua"
+                  ? "Tidak ada karya yang cocok"
+                  : "Belum ada portofolio yang dipublikasikan"
+              }
+              keterangan={
+                query || jurusan !== "Semua"
+                  ? "Coba kata kunci lain, atau pilih jurusan yang berbeda."
+                  : "Karya siswa akan tampil di sini setelah dipublikasikan pihak sekolah."
+              }
+            />
           ) : (
             <div className="smk-galeri-grid">
               {filtered.map((item, idx) => {

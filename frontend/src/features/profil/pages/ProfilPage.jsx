@@ -173,13 +173,11 @@ export default function ProfilPage() {
               {sejarah.deskripsi}
             </p>
           ) : (
-            <p className="smk-section-text">
-              Berdiri sejak [Tahun], SMK Negeri 3 Balige telah berkembang menjadi
-              institusi vokasi unggulan yang fokus pada integrasi teknologi
-              informasi dalam setiap aspek pendidikan. Kami berkomitmen untuk
-              terus berinovasi dalam mencetak lulusan yang siap menghadapi
-              tantangan industri global.
-            </p>
+            <KondisiKosong
+              ikon="scroll"
+              judul="Sejarah dan identitas sekolah belum tersedia"
+              keterangan="Keterangan mengenai sejarah dan identitas sekolah akan ditampilkan di sini setelah dilengkapi pihak sekolah."
+            />
           )}
         </div>
       </section>
@@ -207,12 +205,14 @@ export default function ProfilPage() {
                     </li>
                   ))}
                 </ul>
+              ) : visiList[0] ? (
+                <p>{visiList[0].deskripsi}</p>
               ) : (
-                <p>
-                  {visiList[0]
-                    ? visiList[0].deskripsi
-                    : "Menjadi sekolah vokasi unggulan yang menghasilkan lulusan berakhlak mulia, kompeten, dan berdaya saing di tingkat nasional dan internasional pada tahun 2030."}
-                </p>
+                <KondisiKosong
+                  ringkas
+                  ikon="target"
+                  judul="Visi sekolah belum tersedia"
+                />
               )}
             </div>
 
@@ -233,12 +233,11 @@ export default function ProfilPage() {
                   ))}
                 </ul>
               ) : (
-                <p>
-                  Menyelenggarakan pendidikan kejuruan berbasis teknologi,
-                  membangun kemitraan industri strategis, mengembangkan karakter
-                  dan kompetensi siswa, serta mewujudkan lingkungan belajar yang
-                  inovatif dan berbudaya.
-                </p>
+                <KondisiKosong
+                  ringkas
+                  ikon="scroll"
+                  judul="Misi sekolah belum tersedia"
+                />
               )}
             </div>
           </div>

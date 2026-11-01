@@ -10,12 +10,15 @@ import Icon from "../../../components/Icon";
  *
  * Bagian lain memakai satu baris teks abu-abu yang mudah terlewat. Keduanya
  * kini memakai tampilan yang sama: jelas kosong, dan tidak menyesatkan.
+ *
+ * `ringkas` dipakai di dalam kartu atau panel sempit, tempat kartu ukuran
+ * penuh akan terlihat sesak.
  */
-export default function KondisiKosong({ ikon = "fileText", judul, keterangan }) {
+export default function KondisiKosong({ ikon = "fileText", judul, keterangan, ringkas = false }) {
   return (
-    <div className="smk-kosong">
+    <div className={`smk-kosong${ringkas ? " smk-kosong-ringkas" : ""}`}>
       <span className="smk-kosong-ikon" aria-hidden="true">
-        <Icon name={ikon} size={28} />
+        <Icon name={ikon} size={ringkas ? 20 : 28} />
       </span>
       <p className="smk-kosong-judul">{judul}</p>
       {keterangan && <p className="smk-kosong-ket">{keterangan}</p>}

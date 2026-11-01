@@ -2845,3 +2845,47 @@ html { overflow-x: hidden; }
     padding: 28px 18px;
   }
 }
+
+/* Varian ringkas: untuk di dalam kartu atau panel sempit. */
+.smk-kosong.smk-kosong-ringkas {
+  padding: 20px 14px;
+  gap: 8px;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.smk-kosong-ringkas .smk-kosong-ikon {
+  width: 42px;
+  height: 42px;
+}
+
+.smk-kosong-ringkas .smk-kosong-judul {
+  font-size: 14px;
+}
+
+.smk-kosong-ringkas .smk-kosong-ket {
+  font-size: 12.5px;
+}
+
+/* Di panel berlatar gelap, warnanya dibalik agar tetap terbaca. */
+.smk-agenda-side .smk-kosong,
+.smk-agenda-panel .smk-kosong {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: transparent;
+}
+
+.smk-agenda-side .smk-kosong-ikon,
+.smk-agenda-panel .smk-kosong-ikon {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--p-gold);
+}
+
+.smk-agenda-side .smk-kosong-judul,
+.smk-agenda-panel .smk-kosong-judul {
+  color: #fff;
+}
+
+.smk-agenda-side .smk-kosong-ket,
+.smk-agenda-panel .smk-kosong-ket {
+  color: rgba(255, 255, 255, 0.7);
+}

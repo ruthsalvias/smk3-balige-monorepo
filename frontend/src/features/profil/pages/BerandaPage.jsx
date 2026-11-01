@@ -9,6 +9,7 @@ import { useSiteSettings } from "../context/SiteSettingsContext";
 import { useHeroSlider } from "../hooks/useHeroSlider";
 import Icon from "../../../components/Icon";
 import Reveal from "../../../components/Reveal";
+import KondisiKosong from "../components/KondisiKosong";
 
 const jurusanFallback = [
   { id: "f1", nama_jurusan: "Teknik Komputer & Jaringan", deskripsi: "Fokus pada infrastruktur jaringan dan keamanan siber.", icon: "briefcase" },
@@ -229,7 +230,11 @@ export default function BerandaPage() {
           </div>
 
           {!kabarUtama && agendaTerdekat.length === 0 ? (
-            <p className="smk-state-text">Belum ada kabar terbaru.</p>
+            <KondisiKosong
+              ikon="news"
+              judul="Belum ada kabar terbaru"
+              keterangan="Berita, pengumuman, dan agenda sekolah akan tampil di sini begitu dipublikasikan."
+            />
           ) : (
             <>
               <div className="smk-berita-layout">
@@ -287,7 +292,11 @@ export default function BerandaPage() {
                     <Icon name="calendar" size={18} /> Agenda Sekolah
                   </h2>
                   {agendaTerdekat.length === 0 ? (
-                    <p className="smk-state-text">Belum ada agenda terjadwal.</p>
+                    <KondisiKosong
+                      ringkas
+                      ikon="calendar"
+                      judul="Belum ada agenda terjadwal"
+                    />
                   ) : (
                     <div className="smk-agenda-list">
                       {agendaTerdekat.map((a) => (
