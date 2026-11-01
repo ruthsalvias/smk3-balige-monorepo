@@ -275,6 +275,27 @@
   background: #eff6ff;
 }
 
+/* Seluruh baris membuka detail; kotak centang dan menu aksi dikecualikan. */
+.modern-table tbody tr.baris-klik {
+  cursor: pointer;
+}
+
+.modern-table tbody tr.baris-klik:hover {
+  background: #eef2ff;
+}
+
+.modern-table tbody tr.baris-klik:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+/* Kotak centang dan menu aksi memakai kursor biasa supaya jelas bahwa
+   keduanya punya perilaku sendiri, bukan membuka detail. */
+.modern-table tbody tr.baris-klik .kolom-pilih,
+.modern-table tbody tr.baris-klik .aksi {
+  cursor: default;
+}
+
 /* Nama kolom */
 .nama {
   font-weight: 500;

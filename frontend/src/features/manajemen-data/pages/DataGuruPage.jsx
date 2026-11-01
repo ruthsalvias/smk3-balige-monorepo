@@ -12,6 +12,7 @@ import { showSuccessDialog, showErrorDialog } from "../../../helpers/toolsHelper
 import AdminLayout from "../../admin/layouts/AdminLayout.jsx";
 import DetailModal from "../components/DetailModal.jsx";
 import RowActionMenu from "../components/RowActionMenu.jsx";
+import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
@@ -251,7 +252,11 @@ export default function DataGuruPage() {
               </thead>
               <tbody>
                 {filtered.map((item, index) => (
-                  <tr key={item.id} className={terpilih.has(item.id) ? "baris-terpilih" : ""}>
+                  <tr
+                    key={item.id}
+                    {...propsBarisKlik(() => setDetailItem(item), `Lihat detail ${item.namaLengkap}`)}
+                    className={`baris-klik${terpilih.has(item.id) ? " baris-terpilih" : ""}`}
+                  >
                     <td className="kolom-pilih">
                       <KotakPilih
                         dipilih={terpilih.has(item.id)}

@@ -13,6 +13,7 @@ import { showSuccessDialog, showErrorDialog } from "../../../helpers/toolsHelper
 import "../resources/manajemen.css";
 import AdminLayout from "../../admin/layouts/AdminLayout.jsx";
 import RowActionMenu from "../components/RowActionMenu.jsx";
+import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
@@ -23,6 +24,7 @@ import KonfirmasiHapusMassal, {
 export default function DataSiswaPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const bukaDetail = (item) => navigate(adminPath(`/data/siswa/${item.id}`));
 
   // Dibungkus useMemo agar identitasnya stabil saat dipakai sebagai dependensi efek.
   const siswaStore = useSelector((s) => s.siswa);
@@ -274,7 +276,11 @@ export default function DataSiswaPage() {
               </thead>
               <tbody>
                 {filtered.map((item, index) => (
-                  <tr key={item.id} className={terpilih.has(item.id) ? "baris-terpilih" : ""}>
+                  <tr
+                    key={item.id}
+                    {...propsBarisKlik(() => bukaDetail(item), `Lihat detail ${item.namaLengkap}`)}
+                    className={`baris-klik${terpilih.has(item.id) ? " baris-terpilih" : ""}`}
+                  >
                     <td className="kolom-pilih">
                       <KotakPilih
                         dipilih={terpilih.has(item.id)}
@@ -286,7 +292,7 @@ export default function DataSiswaPage() {
                     <td>{item.nisn || "-"}</td>
                     <td>{item.nis || "-"}</td>
                     <td className="nama">
-                      <button className="nama-link" onClick={() => setDetailItem(item)}>
+                      <button className="nama-link" onClick={() => bukaDetail(item)}>
                         {item.namaLengkap}
                       </button>
                     </td>
@@ -302,7 +308,7 @@ export default function DataSiswaPage() {
                     </td>
                     <td className="aksi">
                       <RowActionMenu
-                        onDetail={() => navigate(adminPath(`/data/siswa/${item.id}`))}
+                        onDetail={() => bukaDetail(item)}
                         onEdit={() => navigate(adminPath(`/data/siswa/edit/${item.id}`))}
                         onDelete={() => handleDeleteClick(item)}
                       />
