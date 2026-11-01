@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import { AdminCard, AdminTable, AdminModal, ActionButtons } from "../components/AdminComponents";
 import { showConfirmDialog, showErrorDialog } from "../../../helpers/toolsHelper";
+import KotakCari from "../../../components/KotakCari";
+import Paginasi from "../../manajemen-data/components/Paginasi";
 
 // 1. Import konfigurasi Axios yang sudah mengarah ke API Gateway (Port 6766)
 import apiGateway from "../../../config/axios";
@@ -325,6 +327,8 @@ export default function AdminPelanggaranPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showGuruDropdown, setShowGuruDropdown] = useState(false);
   const [cariGuru, setCariGuru] = useState("");
+  const [cariSurat, setCariSurat] = useState("");
+  const [halaman, setHalaman] = useState(1);
   const [editId, setEditId] = useState(null); 
   
   const [idSiswa, setIdSiswa] = useState("");
@@ -512,6 +516,34 @@ export default function AdminPelanggaranPage() {
     return siswa ? siswa.nama : "Siswa tidak diketahui";
   };
 
+  /** "2026-10-09" dibaca lebih mudah sebagai "9 Okt 2026". */
+  const tanggalTerbaca = (teks) => {
+    if (!teks) return "-";
+    const tgl = new Date(teks);
+    if (Number.isNaN(tgl.getTime())) return teks;
+    return tgl.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const PER_HALAMAN = 50;
+
+  const suratTersaring = useMemo(() => {
+    const kunci = cariSurat.trim().toLowerCase();
+    if (!kunci) return data;
+    return data.filter(
+      (item) =>
+        String(item.no_surat || "").toLowerCase().includes(kunci) ||
+        getNamaSiswa(item.id_siswa).toLowerCase().includes(kunci) ||
+        String(item.tanggal_panggilan || "").includes(kunci) ||
+        String(item.permasalahan || "").toLowerCase().includes(kunci),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, cariSurat, masterSiswa]);
+
+  const totalHalaman = Math.max(1, Math.ceil(suratTersaring.length / PER_HALAMAN));
+  const halamanAman = Math.min(halaman, totalHalaman);
+  const nomorAwal = (halamanAman - 1) * PER_HALAMAN;
+  const suratTampil = suratTersaring.slice(nomorAwal, nomorAwal + PER_HALAMAN);
+
   return (
     <AdminLayout title="Pelanggaran & Surat Panggilan">
       <AdminCard 
@@ -520,12 +552,35 @@ export default function AdminPelanggaranPage() {
         onAdd={openAdd}
         addLabel="+ Buat Surat Baru"
       >
-        <AdminTable columns={["No Surat", "Nama Siswa", "Tanggal", "Aksi Terintegrasi", "Aksi"]} loading={loading} empty={!data.length}>
-          {data.map((item) => (
+        <div className="smk-akun-toolbar">
+          <KotakCari
+            nilai={cariSurat}
+            onUbah={(nilai) => {
+              setCariSurat(nilai);
+              setHalaman(1);
+            }}
+            placeholder="Cari nomor surat, nama siswa, tanggal, atau permasalahan..."
+            jumlah={suratTersaring.length}
+            labelJumlah="surat"
+          />
+        </div>
+
+        <AdminTable
+          columns={["No", "No Surat", "Nama Siswa", "Tanggal", "Aksi Terintegrasi", "Aksi"]}
+          loading={loading}
+          empty={!loading && suratTersaring.length === 0}
+          emptyText={
+            cariSurat.trim()
+              ? `Tidak ada surat yang cocok dengan "${cariSurat.trim()}"`
+              : "Belum ada surat panggilan"
+          }
+        >
+          {suratTampil.map((item, urutan) => (
             <tr key={item.id}>
+              <td className="smk-akun-no">{nomorAwal + urutan + 1}</td>
               <td><strong>{item.no_surat}</strong></td>
               <td>{getNamaSiswa(item.id_siswa)}</td>
-              <td>{item.tanggal_panggilan}</td>
+              <td className="smk-akun-tanggal">{tanggalTerbaca(item.tanggal_panggilan)}</td>
               
               <td>
                 <div className="smk-admin-actions">
@@ -555,6 +610,17 @@ export default function AdminPelanggaranPage() {
             </tr>
           ))}
         </AdminTable>
+
+        <div className="smk-akun-paginasi">
+          <Paginasi
+            halaman={halamanAman}
+            totalData={suratTersaring.length}
+            perHalaman={PER_HALAMAN}
+            jumlahTampil={suratTampil.length}
+            label="surat"
+            onPindah={setHalaman}
+          />
+        </div>
       </AdminCard>
 
       <AdminModal 

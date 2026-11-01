@@ -61,7 +61,11 @@ export function AdminCard({ title, subtitle, onAdd, addLabel = "+ Tambah", child
 }
 
 // ── Table ─────────────────────────────────────────────────────
-export function AdminTable({ columns, children, loading, empty }) {
+/**
+ * `emptyText` dipakai halaman yang punya pencarian: "Belum ada data"
+ * menyesatkan ketika datanya ada tetapi tidak cocok dengan kata kunci.
+ */
+export function AdminTable({ columns, children, loading, empty, emptyText }) {
   return (
     <div className="smk-admin-table-wrap">
       <table className="smk-admin-table">
@@ -85,7 +89,7 @@ export function AdminTable({ columns, children, loading, empty }) {
           ) : empty ? (
             <tr>
               <td colSpan={columns.length} className="smk-admin-table-state">
-                <Icon name="image" size={18} /> Belum ada data
+                <Icon name="image" size={18} /> {emptyText || "Belum ada data"}
               </td>
             </tr>
           ) : children}
