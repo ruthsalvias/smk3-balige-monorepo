@@ -19,7 +19,7 @@ async function handle(res) {
   // (JSON berbahasa Inggris "File too large"). Pesannya diseragamkan di sini.
   if (res.status === 413) {
     throw new Error(
-      "Ukuran berkas terlalu besar. Maksimal 10 MB — perkecil berkas lalu coba lagi.",
+      "Ukuran berkas terlalu besar. Maksimal 20 MB — perkecil berkas lalu coba lagi.",
     );
   }
 

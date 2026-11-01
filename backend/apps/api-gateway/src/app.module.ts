@@ -28,17 +28,16 @@ import { GatewayController } from './gateway.controller';
     // Passport with default 'jwt' strategy
     PassportModule.register({ defaultStrategy: 'jwt' }),
 
-    // Rate limiting — max 60 requests per 60 seconds per IP
+    // Rate limiting — max 1000 requests per second per IP
     /**
      * Satu kali membuka halaman memicu belasan permintaan (pengaturan,
-     * statistik, daftar berita, gambar). Batas 60/menit membuat pengguna biasa
-     * ikut tertolak, jadi batas umum dibuat longgar dan bisa disetel lewat .env.
-     * Pengetatan yang benar-benar penting ada di endpoint login
-     * (lihat @Throttle pada AuthController).
+     * statistik, daftar berita, gambar). Batas umum dibuat sangat longgar
+     * (1000/detik) dan bisa disetel lewat .env. Pengetatan yang benar-benar
+     * penting ada di endpoint login (lihat @Throttle pada AuthController).
      */
     ThrottlerModule.forRoot([{
-      ttl: Number(process.env.RATE_LIMIT_TTL_MS) || 60000,
-      limit: Number(process.env.RATE_LIMIT_MAX) || 600,
+      ttl: Number(process.env.RATE_LIMIT_TTL_MS) || 1000,
+      limit: Number(process.env.RATE_LIMIT_MAX) || 1000,
     }]),
 
     // Login, verifikasi token, dan penyimpanan akun

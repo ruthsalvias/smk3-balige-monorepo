@@ -28,7 +28,7 @@ export function documentUploadOptions(folder: string): MulterOptions {
         cb(null, `${folder}-${unique}${ext}`);
       },
     }),
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: 20 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       const ext = extname(file.originalname).toLowerCase();
       if (!DOCUMENT_EXT.includes(ext)) {
@@ -42,7 +42,7 @@ export function documentUploadOptions(folder: string): MulterOptions {
 export function memoryUploadOptions(): MulterOptions {
   return {
     storage: memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: 20 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       const ext = extname(file.originalname).toLowerCase();
       if (!EXCEL_EXT.includes(ext)) {

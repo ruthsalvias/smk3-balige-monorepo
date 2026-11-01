@@ -17,7 +17,7 @@ const multerOptions = {
       cb(null, `mitra-${uniqueSuffix}${extname(file.originalname)}`);
     },
   }),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req: any, file: any, cb: any) => {
     if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|svg\+xml)$/)) {
       return cb(new BadRequestException('Hanya file gambar yang diperbolehkan'), false);

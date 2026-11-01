@@ -360,7 +360,7 @@ export default function AdminPengaturanPage() {
                     <input id="logo-input" type="file" accept="image/*" hidden onChange={(e) => onLogo(e.target.files?.[0])} />
                   </label>
                 </div>
-                <small className="smk-form-hint">PNG / JPG / WEBP, maksimal 10MB.</small>
+                <small className="smk-form-hint">PNG / JPG / WEBP, maksimal 20MB.</small>
               </div>
             </div>
           </section>
