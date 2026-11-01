@@ -4,6 +4,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import { AdminCard, AdminTable, AdminModal } from "../components/AdminComponents";
 import RowActionMenu from "../../manajemen-data/components/RowActionMenu";
 import KotakCari from "../../../components/KotakCari";
+import Paginasi from "../../manajemen-data/components/Paginasi";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -32,6 +33,13 @@ const ROLE_PILIHAN = [
   { nilai: "siswa", label: "Siswa" },
 ];
 
+const LABEL_ROLE = {
+  master_admin: "Master Admin",
+  admin: "Admin",
+  guru: "Guru",
+  siswa: "Siswa",
+};
+
 function pesanError(err, fallback) {
   return err?.response?.data?.message || err?.message || fallback;
 }
@@ -53,6 +61,7 @@ export default function AdminAkunPage() {
   const [loading, setLoading] = useState(false);
   const [cari, setCari] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [halaman, setHalaman] = useState(1);
 
   const [modalBuat, setModalBuat] = useState(false);
   const [modalMassal, setModalMassal] = useState(false);
@@ -165,15 +174,31 @@ export default function AdminAkunPage() {
     });
   }, [akun, cari, filterRole, rombelPerAkun]);
 
+  const PER_HALAMAN = 50;
+
+  // Kembali ke halaman pertama setiap kali hasil penyaringan berubah, supaya
+  // tidak berhenti di halaman yang sudah tidak ada isinya.
+  useEffect(() => {
+    setHalaman(1);
+  }, [cari, filterRole]);
+
+  const totalHalaman = Math.max(1, Math.ceil(terfilter.length / PER_HALAMAN));
+  const halamanAman = Math.min(halaman, totalHalaman);
+  const nomorAwal = (halamanAman - 1) * PER_HALAMAN;
+  const tampil = useMemo(
+    () => terfilter.slice(nomorAwal, nomorAwal + PER_HALAMAN),
+    [terfilter, nomorAwal],
+  );
+
   // ── Pilih banyak akun untuk dihapus sekaligus ─────────────────
   // Akun master admin dan akun yang sedang dipakai tidak bisa dipilih.
   const bolehDipilih = (item) =>
     !item.roles?.includes("master_admin") && item.id !== user?.id;
 
   const idBisaDipilih = useMemo(
-    () => terfilter.filter(bolehDipilih).map((a) => a.id),
+    () => tampil.filter(bolehDipilih).map((a) => a.id),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [terfilter, user?.id],
+    [tampil, user?.id],
   );
   const semuaTerpilih =
     idBisaDipilih.length > 0 && idBisaDipilih.every((id) => terpilih.has(id));
@@ -425,6 +450,7 @@ export default function AdminAkunPage() {
                 />
               ),
             },
+            "No",
             "Username",
             "Nama",
             "Role",
@@ -437,7 +463,7 @@ export default function AdminAkunPage() {
           loading={loading}
           empty={!loading && terfilter.length === 0}
         >
-          {terfilter.map((item) => (
+          {tampil.map((item, urutan) => (
             <tr key={item.id}>
               <td>
                 {bolehDipilih(item) ? (
@@ -450,29 +476,51 @@ export default function AdminAkunPage() {
                   <span title="Akun ini tidak bisa dihapus" style={{ color: "#cbd5e1" }}>—</span>
                 )}
               </td>
-              <td>{item.username}</td>
+              <td className="smk-akun-no">{nomorAwal + urutan + 1}</td>
+              <td className="smk-akun-username">{item.username}</td>
               <td>{item.nama}</td>
-              <td>{item.roles.join(", ") || "-"}</td>
+              <td>{item.roles.map((r) => LABEL_ROLE[r] || r).join(", ") || "-"}</td>
               <td>
                 {(() => {
                   const rombel = rombelDari(item);
-                  if (!rombel) return <span style={{ color: "#cbd5e1" }}>—</span>;
-                  const teks = [rombel.kelas, rombel.jurusan].filter(Boolean).join(" · ");
-                  return teks || <span style={{ color: "#cbd5e1" }}>—</span>;
+                  if (!rombel || (!rombel.kelas && !rombel.jurusan)) {
+                    return <span className="smk-akun-kosong">—</span>;
+                  }
+                  return (
+                    <span className="smk-akun-rombel">
+                      {rombel.kelas && <span className="smk-akun-kelas">{rombel.kelas}</span>}
+                      {rombel.jurusan && (
+                        <span className="smk-akun-jurusan" title={rombel.jurusan}>
+                          {rombel.jurusan}
+                        </span>
+                      )}
+                    </span>
+                  );
                 })()}
               </td>
               <td>
                 {item.passwordDiubahSendiri ? (
-                  <span className="smk-admin-badge smk-admin-badge-blue">
-                    Diubah sendiri {tanggalSingkat(item.passwordDiubahPada)}
+                  <span className="smk-akun-status">
+                    <span
+                      className="smk-admin-badge smk-admin-badge-blue"
+                      title="Siswa sudah mengganti sendiri password pemberian admin"
+                    >
+                      Sudah diganti
+                    </span>
+                    <span className="smk-akun-status-tanggal">
+                      {tanggalSingkat(item.passwordDiubahPada)}
+                    </span>
                   </span>
                 ) : (
-                  <span className="smk-admin-badge smk-admin-badge-bronze">
-                    Masih password dari admin
+                  <span
+                    className="smk-admin-badge smk-admin-badge-bronze"
+                    title="Masih memakai password yang dibuatkan admin"
+                  >
+                    Belum diganti
                   </span>
                 )}
               </td>
-              <td>{tanggalSingkat(item.dibuatPada)}</td>
+              <td className="smk-akun-tanggal">{tanggalSingkat(item.dibuatPada)}</td>
               <td>{item.aktif ? "Aktif" : "Nonaktif"}</td>
               <td>
                 <div className="smk-admin-actions">
@@ -493,6 +541,17 @@ export default function AdminAkunPage() {
             </tr>
           ))}
         </AdminTable>
+
+        <div className="smk-akun-paginasi">
+          <Paginasi
+            halaman={halamanAman}
+            totalData={terfilter.length}
+            perHalaman={PER_HALAMAN}
+            jumlahTampil={tampil.length}
+            label="akun"
+            onPindah={setHalaman}
+          />
+        </div>
       </AdminCard>
 
       <KonfirmasiHapusMassal
