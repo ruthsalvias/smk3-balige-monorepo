@@ -89,6 +89,14 @@ export class SiswaController {
     res.send(buffer);
   }
 
+  /** Membaca berkas dan melaporkan hasilnya tanpa menyimpan apa pun. */
+  @Post('import/pratinjau')
+  @UseInterceptors(FileInterceptor('file', memoryUploadOptions()))
+  pratinjauImport(@UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('File Excel wajib diunggah');
+    return this.siswaService.pratinjauImport(file.buffer);
+  }
+
   @Post('import')
   @UseInterceptors(FileInterceptor('file', memoryUploadOptions()))
   import(@UploadedFile() file?: Express.Multer.File) {

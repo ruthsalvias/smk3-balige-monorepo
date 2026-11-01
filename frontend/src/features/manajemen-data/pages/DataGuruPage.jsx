@@ -16,6 +16,7 @@ import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
 import KotakCari from "../../../components/KotakCari";
 import Paginasi from "../components/Paginasi.jsx";
+import PratinjauImport from "../components/PratinjauImport.jsx";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -37,10 +38,14 @@ export default function DataGuruPage() {
   const [offset,        setOffset]        = useState(0);
   const [totalGuru,     setTotalGuru]     = useState(0);
   const [importLoading, setImportLoading] = useState(false);
+  // Berkas ditahan di sini sampai admin menyetujui pratinjaunya.
+  const [berkasImport, setBerkasImport] = useState(null);
+  const [pratinjau, setPratinjau] = useState(null);
+  const [memuatPratinjau, setMemuatPratinjau] = useState(false);
   const [deleteModal,   setDeleteModal]   = useState({ open: false, id: null, nama: "" });
   const [detailItem,    setDetailItem]    = useState(null);
 
-  const perPage     = 20;
+  const perPage     = 50;
   const currentPage = Math.floor(offset / perPage) + 1;
 
   // Saat ada kata kunci atau filter, data diambil lewat endpoint pencarian
@@ -105,20 +110,43 @@ export default function DataGuruPage() {
   }, [guru]);
 
   // ── Handlers ──────────────────────────────────────────────────
+  // Memilih berkas hanya membaca isinya; penyimpanan menunggu persetujuan.
   const handleImport = async (e) => {
     const file = e.target.files[0];
+    e.target.value = "";
     if (!file) return;
+
+    setBerkasImport(file);
+    setPratinjau(null);
+    setMemuatPratinjau(true);
+    try {
+      const res = await manajemenApi.pratinjauImportGuru(file);
+      setPratinjau(res.data);
+    } catch (err) {
+      showErrorDialog(err.message);
+      setBerkasImport(null);
+    } finally {
+      setMemuatPratinjau(false);
+    }
+  };
+
+  const batalkanImport = () => {
+    setBerkasImport(null);
+    setPratinjau(null);
+  };
+
+  const setujuiImport = async () => {
+    if (!berkasImport) return;
     setImportLoading(true);
     try {
-      const res = await manajemenApi.importGuru(file);
-      const { imported, skipped } = res.data;
-      showSuccessDialog(`Import berhasil! ${imported} data masuk, ${skipped} dilewati.`);
+      const res = await manajemenApi.importGuru(berkasImport);
+      showSuccessDialog(res.message || "Import selesai.");
+      batalkanImport();
       muatUlang();
     } catch (err) {
       showErrorDialog(err.message);
     } finally {
       setImportLoading(false);
-      e.target.value = "";
     }
   };
 
@@ -377,6 +405,25 @@ export default function DataGuruPage() {
           ]}
         />
       )}
+
+      <PratinjauImport
+        terbuka={Boolean(berkasImport)}
+        namaBerkas={berkasImport?.name || ""}
+        memuat={memuatPratinjau}
+        memproses={importLoading}
+        hasil={pratinjau}
+        label="guru"
+        kolom={[
+          { kunci: "nip", judul: "NIP" },
+          { kunci: "namaLengkap", judul: "Nama Lengkap" },
+          { kunci: "mataPelajaran", judul: "Mata Pelajaran" },
+          { kunci: "jabatan", judul: "Jabatan" },
+          { kunci: "noTelepon", judul: "No Telepon" },
+          { kunci: "alamat", judul: "Alamat" },
+        ]}
+        onBatal={batalkanImport}
+        onKonfirmasi={setujuiImport}
+      />
 
       {/* MODAL HAPUS MASSAL */}
       <KonfirmasiHapusMassal

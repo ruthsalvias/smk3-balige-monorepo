@@ -349,13 +349,15 @@ export class SiswaService {
   }
 
   /**
-   * Impor dari Excel. Mendukung template sederhana lama maupun export Dapodik
-   * ("Daftar Peserta Didik") yang punya 60+ kolom dan header dua baris.
+   * Membaca berkas Excel dan menentukan nasib tiap baris, tanpa menyimpan
+   * apa pun. Dipakai bersama oleh pratinjau dan impor sungguhan, sehingga
+   * yang dilihat admin di layar persis sama dengan yang akan tersimpan.
    *
-   * Dapodik tidak memuat kolom Kelas dan Jurusan; keduanya diuraikan dari
-   * "Rombel Saat Ini" supaya penyaringan per kelas/jurusan tetap bisa dipakai.
+   * Mendukung template sederhana lama maupun export Dapodik ("Daftar Peserta
+   * Didik") yang punya 60+ kolom dan header dua baris. Dapodik tidak memuat
+   * kolom Kelas dan Jurusan; keduanya diuraikan dari "Rombel Saat Ini".
    */
-  async importFromBuffer(buffer: Buffer) {
+  private async bacaBerkasImpor(buffer: Buffer) {
     const rows = await readSheetRows(buffer, [
       'NISN',
       'NIS',
@@ -366,10 +368,18 @@ export class SiswaService {
       'Rombel Saat Ini',
     ]);
 
-    let imported = 0;
-    let skipped = 0;
-    let tanpaNisn = 0;
-    const duplikat: string[] = [];
+    const siap: Partial<Siswa>[] = [];
+    const duplikat: { nama: string; nisn: string }[] = [];
+    const tanpaNisn: string[] = [];
+    let dilewati = 0;
+
+    // NISN yang sudah ada dikumpulkan sekali, bukan satu kueri per baris.
+    const nisnDiBerkas = new Set<string>();
+    const nisnTerpakai = new Set(
+      (await this.siswaRepository.find({ select: ['nisn'] }))
+        .map((item) => String(item.nisn ?? '').trim().toLowerCase())
+        .filter(Boolean),
+    );
 
     for (const row of rows) {
       const payload: Record<string, string> = {};
@@ -383,11 +393,10 @@ export class SiswaService {
 
       // Baris kosong atau baris contoh bawaan template tidak ikut masuk.
       if (!namaLengkap || isContohRow(namaLengkap, nisn)) {
-        skipped += 1;
+        dilewati += 1;
         continue;
       }
 
-      // Kelas dan jurusan menyatu di rombel pada export Dapodik.
       if (payload.rombel && (!payload.kelas || !payload.jurusan)) {
         const { kelas, jurusan } = uraikanRombel(payload.rombel);
         if (!payload.kelas && kelas) payload.kelas = kelas;
@@ -397,35 +406,85 @@ export class SiswaService {
       const status = (payload.status ?? '').toLowerCase();
       payload.status = STATUS_SISWA.includes(status) ? status : 'aktif';
 
-      // Tanpa NISN baris tetap diimpor supaya datanya tidak hilang, tapi
-      // dihitung terpisah karena belum bisa dibuatkan akun.
-      if (!nisn) {
-        tanpaNisn += 1;
-      } else {
-        const duplicate = await this.siswaRepository.findOne({ where: { nisn } });
-        if (duplicate) {
-          skipped += 1;
-          duplikat.push(namaLengkap);
-          continue;
-        }
+      const kunci = nisn.trim().toLowerCase();
+      if (kunci && (nisnTerpakai.has(kunci) || nisnDiBerkas.has(kunci))) {
+        duplikat.push({ nama: namaLengkap, nisn });
+        continue;
       }
 
-      await this.siswaRepository.save(this.siswaRepository.create(payload as Partial<Siswa>));
-      imported += 1;
+      // Tanpa NISN baris tetap diimpor supaya datanya tidak hilang, tapi
+      // dicatat terpisah karena belum bisa dibuatkan akun.
+      if (!kunci) tanpaNisn.push(namaLengkap);
+      else nisnDiBerkas.add(kunci);
+
+      siap.push(payload as Partial<Siswa>);
     }
 
-    const catatan: string[] = [`${imported} siswa masuk`];
-    if (skipped > 0) catatan.push(`${skipped} dilewati`);
-    if (tanpaNisn > 0) catatan.push(`${tanpaNisn} tanpa NISN`);
+    return { totalBaris: rows.length, siap, duplikat, tanpaNisn, dilewati };
+  }
+
+  /** Ringkasan plus contoh baris untuk ditampilkan sebelum admin menyetujui. */
+  async pratinjauImport(buffer: Buffer) {
+    const hasil = await this.bacaBerkasImpor(buffer);
+
+    const kolomTerisi = FIELD_SISWA.filter((f) =>
+      hasil.siap.some((baris) => (baris as Record<string, unknown>)[f.key]),
+    ).map((f) => f.label);
+
+    return {
+      message: 'Pratinjau siap',
+      data: {
+        ringkasan: {
+          totalBaris: hasil.totalBaris,
+          akanMasuk: hasil.siap.length,
+          duplikat: hasil.duplikat.length,
+          tanpaNisn: hasil.tanpaNisn.length,
+          dilewati: hasil.dilewati,
+        },
+        kolomTerisi,
+        // Cukup sebagian untuk ditampilkan; sisanya tetap terhitung di ringkasan.
+        contoh: hasil.siap.slice(0, 50).map((baris) => {
+          const b = baris as Record<string, string>;
+          return {
+            namaLengkap: b.namaLengkap ?? '',
+            nisn: b.nisn ?? '',
+            nis: b.nis ?? '',
+            kelas: b.kelas ?? '',
+            jurusan: b.jurusan ?? '',
+            rombel: b.rombel ?? '',
+            tanggalLahir: b.tanggalLahir ?? '',
+            alamat: b.alamat ?? '',
+          };
+        }),
+        duplikat: hasil.duplikat.slice(0, 20),
+        tanpaNisn: hasil.tanpaNisn.slice(0, 20),
+      },
+    };
+  }
+
+  async importFromBuffer(buffer: Buffer) {
+    const hasil = await this.bacaBerkasImpor(buffer);
+
+    if (hasil.siap.length > 0) {
+      await this.siswaRepository.save(
+        hasil.siap.map((payload) => this.siswaRepository.create(payload)),
+        { chunk: 100 },
+      );
+    }
+
+    const catatan: string[] = [`${hasil.siap.length} siswa masuk`];
+    if (hasil.duplikat.length > 0) catatan.push(`${hasil.duplikat.length} duplikat dilewati`);
+    if (hasil.dilewati > 0) catatan.push(`${hasil.dilewati} baris tidak terbaca`);
+    if (hasil.tanpaNisn.length > 0) catatan.push(`${hasil.tanpaNisn.length} tanpa NISN`);
 
     return {
       message: `Import selesai: ${catatan.join(', ')}.`,
       data: {
-        imported,
-        skipped,
-        tanpaNisn,
-        total: rows.length,
-        duplikat: duplikat.slice(0, 20),
+        imported: hasil.siap.length,
+        skipped: hasil.duplikat.length + hasil.dilewati,
+        tanpaNisn: hasil.tanpaNisn.length,
+        total: hasil.totalBaris,
+        duplikat: hasil.duplikat.slice(0, 20).map((d) => d.nama),
       },
     };
   }

@@ -141,6 +141,18 @@ async function exportSiswa(params = {}) {
 }
 
 // IMPORT EXCEL
+/** Membaca berkas dan melaporkan hasilnya tanpa menyimpan apa pun. */
+async function pratinjauImportSiswa(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await apiHelper.fetchData(`${BASE_URL}/siswa/import/pratinjau`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal membaca berkas Excel'));
+  return res.json();
+}
+
 async function importSiswa(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -148,7 +160,7 @@ async function importSiswa(file) {
     method: 'POST',
     body: formData,
   });
-  if (!res.ok) throw new Error('Gagal import siswa');
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal import siswa'));
   return res.json();
 }
 
@@ -241,6 +253,18 @@ async function exportGuru() {
 }
 
 // IMPORT EXCEL
+/** Membaca berkas dan melaporkan hasilnya tanpa menyimpan apa pun. */
+async function pratinjauImportGuru(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await apiHelper.fetchData(`${BASE_URL}/guru/import/pratinjau`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal membaca berkas Excel'));
+  return res.json();
+}
+
 async function importGuru(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -248,7 +272,7 @@ async function importGuru(file) {
     method: 'POST',
     body: formData,
   });
-  if (!res.ok) throw new Error('Gagal import guru');
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal import guru'));
   return res.json();
 }
 
@@ -297,6 +321,8 @@ const manajemenApi = {
   getSkemaSiswa,
   getOpsiFilterSiswa,
   getSiswaRingkas,
+  pratinjauImportSiswa,
+  pratinjauImportGuru,
 
   // guru
   getGuru,

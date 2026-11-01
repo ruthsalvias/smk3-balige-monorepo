@@ -17,6 +17,7 @@ import propsBarisKlik from "../components/barisKlik.js";
 import Icon from "../../../components/Icon";
 import KotakCari from "../../../components/KotakCari";
 import Paginasi from "../components/Paginasi.jsx";
+import PratinjauImport from "../components/PratinjauImport.jsx";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
@@ -39,9 +40,13 @@ export default function DataSiswaPage() {
   const [filterJurusan, setFilterJurusan] = useState("");
   const [offset,        setOffset]        = useState(0);
   const [importLoading, setImportLoading] = useState(false);
+  // Berkas ditahan di sini sampai admin menyetujui pratinjaunya.
+  const [berkasImport, setBerkasImport] = useState(null);
+  const [pratinjau, setPratinjau] = useState(null);
+  const [memuatPratinjau, setMemuatPratinjau] = useState(false);
   const [deleteModal,   setDeleteModal]   = useState({ open: false, id: null, nama: "" });
 
-  const perPage     = 20;
+  const perPage     = 50;
   const currentPage = Math.floor(offset / perPage) + 1;
 
   // Saat ada kata kunci atau filter, data diambil lewat endpoint pencarian
@@ -108,21 +113,44 @@ export default function DataSiswaPage() {
   }, [siswa]);
 
   // ── Handlers ──────────────────────────────────────────────────
+  // Memilih berkas hanya membaca isinya; penyimpanan menunggu persetujuan.
   const handleImport = async (e) => {
     const file = e.target.files[0];
+    e.target.value = "";
     if (!file) return;
+
+    setBerkasImport(file);
+    setPratinjau(null);
+    setMemuatPratinjau(true);
+    try {
+      const res = await manajemenApi.pratinjauImportSiswa(file);
+      setPratinjau(res.data);
+    } catch (err) {
+      showErrorDialog(err.message);
+      setBerkasImport(null);
+    } finally {
+      setMemuatPratinjau(false);
+    }
+  };
+
+  const batalkanImport = () => {
+    setBerkasImport(null);
+    setPratinjau(null);
+  };
+
+  const setujuiImport = async () => {
+    if (!berkasImport) return;
     setImportLoading(true);
     try {
-      const res = await manajemenApi.importSiswa(file);
-      const { imported, skipped } = res.data;
-      showSuccessDialog(`Import berhasil! ${imported} data masuk, ${skipped} dilewati.`);
+      const res = await manajemenApi.importSiswa(berkasImport);
+      showSuccessDialog(res.message || "Import selesai.");
+      batalkanImport();
       muatUlang();
       dispatch(asyncGetStatsSiswa());
     } catch (err) {
       showErrorDialog(err.message);
     } finally {
       setImportLoading(false);
-      e.target.value = "";
     }
   };
 
@@ -393,6 +421,27 @@ export default function DataSiswaPage() {
           <div style={{ borderTop: "1px solid #e5e7eb", margin: "32px 0" }} />
         </div>
       </section>
+
+      <PratinjauImport
+        terbuka={Boolean(berkasImport)}
+        namaBerkas={berkasImport?.name || ""}
+        memuat={memuatPratinjau}
+        memproses={importLoading}
+        hasil={pratinjau}
+        label="siswa"
+        kolom={[
+          { kunci: "nisn", judul: "NISN" },
+          { kunci: "nis", judul: "NIS" },
+          { kunci: "namaLengkap", judul: "Nama Lengkap" },
+          { kunci: "rombel", judul: "Rombel" },
+          { kunci: "kelas", judul: "Kelas" },
+          { kunci: "jurusan", judul: "Jurusan" },
+          { kunci: "tanggalLahir", judul: "Tanggal Lahir" },
+          { kunci: "alamat", judul: "Alamat" },
+        ]}
+        onBatal={batalkanImport}
+        onKonfirmasi={setujuiImport}
+      />
 
       {/* MODAL HAPUS MASSAL */}
       <KonfirmasiHapusMassal

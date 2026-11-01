@@ -134,7 +134,12 @@ export class GuruService {
     );
   }
 
-  async importFromBuffer(buffer: Buffer) {
+  /**
+   * Membaca berkas Excel dan menentukan nasib tiap baris tanpa menyimpan
+   * apa pun. Dipakai bersama oleh pratinjau dan impor sungguhan, sehingga
+   * yang dilihat admin di layar persis sama dengan yang akan tersimpan.
+   */
+  private async bacaBerkasImpor(buffer: Buffer) {
     const rows = await readSheetRows(buffer, [
       'NIP',
       'Nama Lengkap',
@@ -143,19 +148,34 @@ export class GuruService {
       'Alamat',
     ]);
 
-    let imported = 0;
-    let skipped = 0;
+    const siap: Partial<Guru>[] = [];
+    const duplikat: { nama: string; nip: string }[] = [];
+    let dilewati = 0;
+
+    const nipDiBerkas = new Set<string>();
+    const nipTerpakai = new Set(
+      (await this.guruRepository.find({ select: ['nip'] }))
+        .map((item) => String(item.nip ?? '').trim().toLowerCase())
+        .filter(Boolean),
+    );
 
     for (const row of rows) {
       const namaLengkap = pickField(row, ['nama lengkap', 'nama', 'namalengkap']);
       const nip = pickField(row, ['nip']);
 
       if (!namaLengkap || isContohRow(namaLengkap, nip)) {
-        skipped += 1;
+        dilewati += 1;
         continue;
       }
 
-      const payload: Partial<Guru> = {
+      const kunci = nip.trim().toLowerCase();
+      if (kunci && (nipTerpakai.has(kunci) || nipDiBerkas.has(kunci))) {
+        duplikat.push({ nama: namaLengkap, nip });
+        continue;
+      }
+      if (kunci) nipDiBerkas.add(kunci);
+
+      siap.push({
         namaLengkap,
         nip,
         mataPelajaran: pickField(row, ['mata pelajaran', 'matapelajaran', 'mapel']),
@@ -163,21 +183,60 @@ export class GuruService {
         anakWali: pickField(row, ['anak wali', 'anakwali', 'wali kelas']),
         noTelepon: pickField(row, ['no telepon', 'notelepon', 'telepon', 'hp']),
         alamat: pickField(row, ['alamat']),
-      };
-
-      const duplicate = payload.nip
-        ? await this.guruRepository.findOne({ where: { nip: payload.nip } })
-        : null;
-
-      if (duplicate) {
-        skipped += 1;
-        continue;
-      }
-
-      await this.guruRepository.save(this.guruRepository.create(payload));
-      imported += 1;
+      });
     }
 
-    return { message: 'Import selesai', data: { imported, skipped, total: rows.length } };
+    return { totalBaris: rows.length, siap, duplikat, dilewati };
+  }
+
+  /** Ringkasan plus contoh baris untuk ditampilkan sebelum admin menyetujui. */
+  async pratinjauImport(buffer: Buffer) {
+    const hasil = await this.bacaBerkasImpor(buffer);
+
+    return {
+      message: 'Pratinjau siap',
+      data: {
+        ringkasan: {
+          totalBaris: hasil.totalBaris,
+          akanMasuk: hasil.siap.length,
+          duplikat: hasil.duplikat.length,
+          dilewati: hasil.dilewati,
+        },
+        contoh: hasil.siap.slice(0, 50).map((g) => ({
+          namaLengkap: g.namaLengkap ?? '',
+          nip: g.nip ?? '',
+          mataPelajaran: g.mataPelajaran ?? '',
+          jabatan: g.jabatan ?? '',
+          noTelepon: g.noTelepon ?? '',
+          alamat: g.alamat ?? '',
+        })),
+        duplikat: hasil.duplikat.slice(0, 20),
+      },
+    };
+  }
+
+  async importFromBuffer(buffer: Buffer) {
+    const hasil = await this.bacaBerkasImpor(buffer);
+
+    if (hasil.siap.length > 0) {
+      await this.guruRepository.save(
+        hasil.siap.map((payload) => this.guruRepository.create(payload)),
+        { chunk: 100 },
+      );
+    }
+
+    const catatan: string[] = [`${hasil.siap.length} guru masuk`];
+    if (hasil.duplikat.length > 0) catatan.push(`${hasil.duplikat.length} duplikat dilewati`);
+    if (hasil.dilewati > 0) catatan.push(`${hasil.dilewati} baris tidak terbaca`);
+
+    return {
+      message: `Import selesai: ${catatan.join(', ')}.`,
+      data: {
+        imported: hasil.siap.length,
+        skipped: hasil.duplikat.length + hasil.dilewati,
+        total: hasil.totalBaris,
+        duplikat: hasil.duplikat.slice(0, 20).map((d) => d.nama),
+      },
+    };
   }
 }
