@@ -39,7 +39,7 @@ async function getSiswa(limit = 20, offset = 0) {
 
 async function getSiswaById(id) {
   const res = await apiHelper.fetchData(`${BASE_URL}/siswa/${id}`);
-  if (!res.ok) throw new Error('Siswa tidak ditemukan');
+  if (!res.ok) throw new Error(await pesanError(res, 'Siswa tidak ditemukan'));
   return res.json();
 }
 
@@ -49,7 +49,7 @@ async function postSiswa(data) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Gagal tambah siswa');
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal tambah siswa'));
   return res.json();
 }
 
@@ -59,7 +59,7 @@ async function putSiswa(id, data) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Gagal update siswa');
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal update siswa'));
   return res.json();
 }
 
@@ -256,6 +256,28 @@ async function getGuruPage(limit = 20, offset = 0) {
   return getGuru(limit, offset);
 }
 
+/** Katalog kolom siswa; menyusun form tambah/ubah dan halaman detail. */
+async function getSkemaSiswa() {
+  const res = await apiHelper.fetchData(`${BASE_URL}/siswa/skema`);
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal memuat skema data siswa'));
+  return res.json();
+}
+
+/** Daftar kelas dan jurusan yang benar-benar terpakai, untuk isi dropdown. */
+async function getOpsiFilterSiswa() {
+  const res = await apiHelper.fetchData(`${BASE_URL}/siswa/opsi-filter`);
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal memuat pilihan kelas dan jurusan'));
+  return res.json();
+}
+
+/** Daftar ringkas seluruh siswa (tanpa batas 200) untuk pembuatan akun massal. */
+async function getSiswaRingkas(params = {}) {
+  const query = buildQuery(params);
+  const res = await apiHelper.fetchData(`${BASE_URL}/siswa/ringkas${query ? `?${query}` : ''}`);
+  if (!res.ok) throw new Error(await pesanError(res, 'Gagal memuat data siswa'));
+  return res.json();
+}
+
 // ============================
 const manajemenApi = {
   // siswa
@@ -272,6 +294,9 @@ const manajemenApi = {
   exportSiswa,
   importSiswa,
   getSiswaPage,
+  getSkemaSiswa,
+  getOpsiFilterSiswa,
+  getSiswaRingkas,
 
   // guru
   getGuru,

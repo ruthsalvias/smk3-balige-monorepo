@@ -324,6 +324,7 @@ export default function AdminPelanggaranPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showGuruDropdown, setShowGuruDropdown] = useState(false);
+  const [cariGuru, setCariGuru] = useState("");
   const [editId, setEditId] = useState(null); 
   
   const [idSiswa, setIdSiswa] = useState("");
@@ -367,6 +368,22 @@ export default function AdminPelanggaranPage() {
     }
   };
 
+  /**
+   * Guru yang sudah dicentang selalu ikut tampil walau tidak cocok dengan
+   * kata kunci, supaya pilihan yang sudah dibuat tidak lenyap saat mengetik.
+   */
+  const guruTersaring = useMemo(() => {
+    const kunci = cariGuru.trim().toLowerCase();
+    if (!kunci) return masterGuru;
+    return masterGuru.filter(
+      (g) =>
+        idPenandatangan.includes(g.id) ||
+        String(g.nama || "").toLowerCase().includes(kunci) ||
+        String(g.jabatan || "").toLowerCase().includes(kunci) ||
+        String(g.nip || "").toLowerCase().includes(kunci),
+    );
+  }, [masterGuru, cariGuru, idPenandatangan]);
+
   const handleCheckboxChange = (guruId) => {
     setIdPenandatangan((prev) => 
       prev.includes(guruId) ? prev.filter((id) => id !== guruId) : [...prev, guruId]
@@ -383,6 +400,7 @@ export default function AdminPelanggaranPage() {
     setTempat("Ruang BK SMK Negeri 3 Balige");
     setIdPenandatangan([]);
     setShowGuruDropdown(false);
+    setCariGuru("");
     setModalOpen(true);
   };
 
@@ -396,6 +414,7 @@ export default function AdminPelanggaranPage() {
     setTempat(item.tempat || "");
     setIdPenandatangan(item.id_penandatangan || []);
     setShowGuruDropdown(false);
+    setCariGuru("");
     setModalOpen(true);
   };
 
@@ -607,11 +626,26 @@ export default function AdminPelanggaranPage() {
           </div>
 
           {showGuruDropdown && (
-            <div style={{ border: '1px solid #e5e9f2', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '12px', maxHeight: '160px', overflowY: 'auto', background: '#f8faff', marginTop: '-4px' }}>
+            <div style={{ border: '1px solid #e5e9f2', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '12px', background: '#f8faff', marginTop: '-4px' }}>
+              <input
+                type="text"
+                className="smk-form-input"
+                autoFocus
+                placeholder="Ketik nama, NIP, atau jabatan guru..."
+                value={cariGuru}
+                onChange={(e) => setCariGuru(e.target.value)}
+                style={{ marginBottom: '10px', background: '#fff' }}
+              />
+
+              <div style={{ maxHeight: '160px', overflowY: 'auto' }}>
               {masterGuru.length === 0 ? (
                 <div style={{ fontSize: '12px', color: '#ef4444', textAlign: 'center' }}>Gagal memuat data guru.</div>
+              ) : guruTersaring.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', padding: '8px' }}>
+                  Tidak ada guru yang cocok dengan &quot;{cariGuru}&quot;.
+                </div>
               ) : (
-                masterGuru.map(guru => (
+                guruTersaring.map(guru => (
                   <label key={guru.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: '13px', cursor: 'pointer' }}>
                     <input 
                       type="checkbox" 
@@ -626,6 +660,7 @@ export default function AdminPelanggaranPage() {
                   </label>
                 ))
               )}
+              </div>
             </div>
           )}
         </div>

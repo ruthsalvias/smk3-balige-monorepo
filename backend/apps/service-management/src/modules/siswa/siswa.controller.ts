@@ -18,6 +18,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FIELD_SISWA, KELOMPOK_FIELD } from './siswa-fields';
 import type { Response } from 'express';
 import { existsSync, unlink } from 'fs';
 import { basename, join, resolve } from 'path';
@@ -54,6 +55,22 @@ export class SiswaController {
     @Query('status') status?: string,
   ) {
     return this.siswaService.search({ q: q || search, kelas, jurusan, status });
+  }
+
+  /** Dipakai frontend untuk menyusun form tambah/ubah dan halaman detail. */
+  @Get('skema')
+  skema() {
+    return { data: { kelompok: KELOMPOK_FIELD, field: FIELD_SISWA } };
+  }
+
+  @Get('opsi-filter')
+  opsiFilter() {
+    return this.siswaService.opsiFilter();
+  }
+
+  @Get('ringkas')
+  ringkas(@Query('kelas') kelas?: string, @Query('jurusan') jurusan?: string) {
+    return this.siswaService.ringkas({ kelas, jurusan });
   }
 
   @Get('stats')

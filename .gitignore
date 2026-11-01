@@ -38,3 +38,9 @@ lerna-debug.log*
 # Unggahan runtime (bind mount docker-compose)
 /uploads/*
 !/uploads/**/.gitkeep
+
+# Export Dapodik berisi NIK, alamat, dan data orang tua siswa.
+# Jangan pernah ikut ter-commit ke repository publik.
+/*.xlsx
+/*.xls
+daftar_pd-*.xlsx

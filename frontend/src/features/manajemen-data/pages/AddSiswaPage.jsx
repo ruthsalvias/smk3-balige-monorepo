@@ -1,282 +1,113 @@
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminPath } from "../../../config/adminPath";
-import { asyncPostSiswa } from "../states/action";
 import manajemenApi from "../api/manajemenApi.js";
 import AdminLayout from "../../admin/layouts/AdminLayout.jsx";
-import Icon from "../../../components/Icon";
+import FormSiswaLengkap, { nilaiKosong } from "../components/FormSiswaLengkap.jsx";
+import { showErrorDialog, showSuccessDialog } from "../../../helpers/toolsHelper";
 import "../resources/manajemen.css";
 
 export default function AddSiswaPage() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    namaLengkap: "",
-    jurusan: "",
-    nisn: "",
-    nis: "",
-    kelas: "",
-    tanggalLahir: "",
-    alamat: "",
-    noWaOrtu: "",
-    status: "aktif",
-    raporFile: "",
-    sklFile: "",
-    ijazahFile: "",
-  });
+  const [skema, setSkema] = useState(null);
+  const [form, setForm] = useState({});
+  const [memuat, setMemuat] = useState(true);
+  const [menyimpan, setMenyimpan] = useState(false);
 
-  // Menyimpan file object sementara sebelum siswa dibuat
-  const [pendingFiles, setPendingFiles] = useState({
-    raporFile: null,
-    sklFile: null,
-    ijazahFile: null,
-  });
-
-  const [fileNames, setFileNames] = useState({
-    raporFile: "",
-    sklFile: "",
-    ijazahFile: "",
-  });
-
-  const [uploading, setUploading] = useState(false);
+  useEffect(() => {
+    let hidup = true;
+    (async () => {
+      try {
+        const res = await manajemenApi.getSkemaSiswa();
+        if (!hidup) return;
+        const isi = res?.data || res;
+        setSkema(isi);
+        setForm(nilaiKosong(isi));
+      } catch (err) {
+        if (hidup) showErrorDialog(err.message);
+      } finally {
+        if (hidup) setMemuat(false);
+      }
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
-
-  // Simpan file sementara di state (belum upload)
-  const handleFileSelect = (field, e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.type !== "application/pdf") {
-      alert("Hanya file PDF yang diperbolehkan");
-      e.target.value = "";
-      return;
-    }
-
-    setPendingFiles((prev) => ({ ...prev, [field]: file }));
-    setFileNames((prev) => ({ ...prev, [field]: file.name }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setUploading(true);
 
+    if (!form.namaLengkap?.trim()) {
+      showErrorDialog("Nama lengkap wajib diisi");
+      return;
+    }
+    if (!form.nisn?.trim()) {
+      showErrorDialog("NISN wajib diisi");
+      return;
+    }
+
+    setMenyimpan(true);
     try {
-      // 1. Simpan data siswa dulu, dapat id dari response
-      const result = await manajemenApi.postSiswa(form);
-      const newId = result?.data?.siswa?.id || result?.data?.id || result?.id;
+      // Kolom kosong tidak dikirim supaya pesan validasi backend tetap jelas
+      // dan kolom lama tidak tertimpa string kosong.
+      const isi = {};
+      Object.entries(form).forEach(([key, value]) => {
+        const teks = String(value ?? "").trim();
+        if (teks !== "") isi[key] = teks;
+      });
 
-      if (!newId) throw new Error("ID siswa tidak ditemukan dari response");
-
-      // 2. Upload file yang dipilih (jika ada)
-      const typeMap = { raporFile: "rapor", sklFile: "skl", ijazahFile: "ijazah" };
-      for (const [field, file] of Object.entries(pendingFiles)) {
-        if (file) {
-          await manajemenApi.uploadSiswaFile(newId, typeMap[field], file);
-        }
-      }
-
+      await manajemenApi.postSiswa(isi);
+      showSuccessDialog("Siswa berhasil ditambahkan");
       navigate(adminPath("/data/siswa"));
     } catch (err) {
-      alert("Gagal menyimpan: " + err.message);
+      showErrorDialog(err.message);
     } finally {
-      setUploading(false);
+      setMenyimpan(false);
     }
   };
-
-  const dokumenFields = [
-    { key: "raporFile",  label: "File Rapor" },
-    { key: "sklFile",    label: "File SKL" },
-    { key: "ijazahFile", label: "File Ijazah" },
-  ];
 
   return (
     <AdminLayout>
       <section className="smk-section smk-bg-cream">
-
-        {/* HEADER AREA */}
         <div className="smk-header-area">
           <h1 className="smk-section-title">
             Tambah <span className="text-primary">Siswa Baru</span>
           </h1>
           <p className="smk-section-subtitle">
-            Isi semua data siswa dengan lengkap dan benar
+            Hanya Nama Lengkap dan NISN yang wajib diisi. Kolom lain boleh dilengkapi menyusul.
           </p>
         </div>
 
-        {/* FORM CARD */}
         <div className="smk-manajemen-container">
+          {memuat ? (
+            <div style={{ textAlign: "center", color: "#aaa", padding: "30px" }}>Memuat form...</div>
+          ) : !skema ? (
+            <div style={{ textAlign: "center", color: "#ef4444", padding: "30px" }}>Skema data siswa gagal dimuat.</div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <FormSiswaLengkap skema={skema} nilai={form} onChange={handleChange} />
 
-          <div style={{ borderTop: "1px solid #e5e7eb", margin: "50px 0" }} />
-
-          <form onSubmit={handleSubmit}>
-
-            {/* ── GRUP 1: Identitas Siswa ── */}
-            <div className="form-section">
-              <div className="form-section-header">
-                <div className="form-section-icon"><Icon name="students" size={20} /></div>
-                <div>
-                  <h2 className="form-section-title">Identitas Siswa</h2>
-                  <p className="form-section-desc">Data pribadi dan identitas resmi siswa</p>
-                </div>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  onClick={() => navigate(adminPath("/data/siswa"))}
+                  className="btn-cancel"
+                >
+                  Batal
+                </button>
+                <button type="submit" className="btn-save" disabled={menyimpan}>
+                  {menyimpan ? "Menyimpan..." : "Simpan Siswa"}
+                </button>
               </div>
-
-              <div className="form-grid">
-                <div className="form-field col-span-2">
-                  <label className="form-label">Nama Lengkap <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    name="namaLengkap"
-                    placeholder="Masukkan nama lengkap siswa"
-                    value={form.namaLengkap}
-                    onChange={handleChange}
-                    className="form-input"
-                    required
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">NISN <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    name="nisn"
-                    placeholder="Nomor Induk Siswa Nasional"
-                    value={form.nisn}
-                    onChange={handleChange}
-                    className="form-input"
-                    required
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">NIS</label>
-                  <input
-                    type="text"
-                    name="nis"
-                    placeholder="Nomor Induk Siswa"
-                    value={form.nis}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">Tanggal Lahir</label>
-                  <input
-                    type="date"
-                    name="tanggalLahir"
-                    value={form.tanggalLahir}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">No WA Orang Tua</label>
-                  <input
-                    type="text"
-                    name="noWaOrtu"
-                    placeholder="Contoh: 08123456789"
-                    value={form.noWaOrtu}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-field col-span-2">
-                  <label className="form-label">Alamat</label>
-                  <textarea
-                    name="alamat"
-                    placeholder="Masukkan alamat lengkap siswa"
-                    value={form.alamat}
-                    onChange={handleChange}
-                    className="form-input form-textarea"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-divider" />
-
-            {/* ── GRUP 2: Akademik ── */}
-            <div className="form-section">
-              <div className="form-section-header">
-                <div className="form-section-icon"><Icon name="book" size={20} /></div>
-                <div>
-                  <h2 className="form-section-title">Data Akademik</h2>
-                  <p className="form-section-desc">Informasi kelas, jurusan, dan status siswa</p>
-                </div>
-              </div>
-
-              <div className="form-grid">
-                <div className="form-field">
-                  <label className="form-label">Kelas <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    name="kelas"
-                    placeholder="Contoh: IF 23"
-                    value={form.kelas}
-                    onChange={handleChange}
-                    className="form-input"
-                    required
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">Jurusan</label>
-                  <input
-                    type="text"
-                    name="jurusan"
-                    placeholder="Contoh: Teknik Informatika"
-                    value={form.jurusan}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">Status Siswa</label>
-                  <select
-                    name="status"
-                    value={form.status}
-                    onChange={handleChange}
-                    className="form-input form-select"
-                  >
-                    <option value="aktif">Aktif</option>
-                    <option value="lulus">Lulus</option>
-                    <option value="nonaktif">Nonaktif</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* ── ACTION BUTTONS ── */}
-            <div className="form-actions">
-              <button
-                type="button"
-                onClick={() => navigate(adminPath("/data/siswa"))}
-                className="btn-cancel"
-              >
-                Batal
-              </button>
-              <button type="submit" className="btn-save" disabled={uploading}>
-                {uploading ? "Menyimpan..." : "Simpan Siswa"}
-              </button>
-            </div>
-
-          </form>
-
-          <div style={{ borderTop: "1px solid #e5e7eb", margin: "16px 0" }} />
+            </form>
+          )}
         </div>
-
-        
-
       </section>
     </AdminLayout>
   );

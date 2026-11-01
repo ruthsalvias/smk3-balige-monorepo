@@ -1105,3 +1105,41 @@
 .btn-save:active {
   transform: translateY(0);
 }
+
+/* ── Halaman detail siswa ───────────────────────────────────── */
+
+.detail-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.detail-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+}
+
+.detail-toolbar-aksi {
+  display: flex;
+  gap: 10px;
+}
+
+/* Label 180px terlalu lebar di layar sempit; tumpuk jadi dua baris. */
+@media (max-width: 640px) {
+  .detail-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .detail-row dt {
+    font-size: 12px;
+    color: #64748b;
+  }
+}

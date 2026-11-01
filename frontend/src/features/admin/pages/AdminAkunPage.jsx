@@ -13,7 +13,7 @@ import {
   showErrorDialog,
   showSuccessDialog,
 } from "../../../helpers/toolsHelper";
-import apiGateway from "../../../config/axios";
+import manajemenApi from "../../manajemen-data/api/manajemenApi";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
   buatAkun,
@@ -64,8 +64,12 @@ export default function AdminAkunPage() {
   const [nis, setNis] = useState("");
 
   const [passwordMassal, setPasswordMassal] = useState("");
-  const [siswaTanpaAkun, setSiswaTanpaAkun] = useState([]);
+  const [semuaSiswa, setSemuaSiswa] = useState([]);
   const [memuatSiswa, setMemuatSiswa] = useState(false);
+  const [opsiKelas, setOpsiKelas] = useState([]);
+  const [opsiJurusan, setOpsiJurusan] = useState([]);
+  const [filterKelas, setFilterKelas] = useState("");
+  const [filterJurusan, setFilterJurusan] = useState("");
 
   const [terpilih, setTerpilih] = useState(() => new Set());
   const [modalHapusMassal, setModalHapusMassal] = useState(false);
@@ -188,23 +192,68 @@ export default function AdminAkunPage() {
   const bukaModalMassal = async () => {
     setModalMassal(true);
     setMemuatSiswa(true);
+    setFilterKelas("");
+    setFilterJurusan("");
     try {
-      const res = await apiGateway.get("/management/siswa?limit=1000&offset=0");
-      const isi = res.data?.data;
-      const daftar = Array.isArray(isi) ? isi : isi?.siswa || isi?.items || [];
-      const usernameAda = new Set(akun.map((a) => a.username));
-      setSiswaTanpaAkun(
-        daftar
-          .filter((s) => s.nis && !usernameAda.has(String(s.nis).toLowerCase()))
-          .map((s) => ({ nis: String(s.nis), nama: s.namaLengkap })),
+      // Endpoint ringkas dipakai karena /siswa biasa dibatasi dan diam-diam
+      // memotong daftar saat siswanya lebih banyak dari batas itu.
+      const [resSiswa, resOpsi] = await Promise.all([
+        manajemenApi.getSiswaRingkas(),
+        manajemenApi.getOpsiFilterSiswa(),
+      ]);
+      const daftar = resSiswa?.data?.siswa || [];
+      setSemuaSiswa(
+        daftar.map((s) => ({
+          id: s.id,
+          nisn: String(s.nisn || "").trim(),
+          nis: String(s.nis || "").trim(),
+          nama: s.namaLengkap || "",
+          kelas: String(s.kelas || "").trim(),
+          jurusan: String(s.jurusan || "").trim(),
+        })),
       );
+      setOpsiKelas(resOpsi?.data?.kelas || []);
+      setOpsiJurusan(resOpsi?.data?.jurusan || []);
     } catch (err) {
-      showErrorDialog(pesanError(err, "Gagal memuat data siswa"));
-      setSiswaTanpaAkun([]);
+      showErrorDialog(err.message || "Gagal memuat data siswa");
+      setSemuaSiswa([]);
+      setOpsiKelas([]);
+      setOpsiJurusan([]);
     } finally {
       setMemuatSiswa(false);
     }
   };
+
+  // Username akun siswa memakai NISN; data Dapodik jarang mengisi NIS.
+  const usernameAda = useMemo(
+    () => new Set(akun.map((a) => String(a.username || "").toLowerCase())),
+    [akun],
+  );
+
+  const siswaTersaring = useMemo(
+    () =>
+      semuaSiswa.filter(
+        (s) =>
+          (!filterKelas || s.kelas === filterKelas) &&
+          (!filterJurusan || s.jurusan === filterJurusan),
+      ),
+    [semuaSiswa, filterKelas, filterJurusan],
+  );
+
+  const tanpaNisn = useMemo(() => siswaTersaring.filter((s) => !s.nisn), [siswaTersaring]);
+
+  const sudahPunyaAkun = useMemo(
+    () => siswaTersaring.filter((s) => s.nisn && usernameAda.has(s.nisn.toLowerCase())),
+    [siswaTersaring, usernameAda],
+  );
+
+  const siswaTanpaAkun = useMemo(
+    () =>
+      siswaTersaring
+        .filter((s) => s.nisn && !usernameAda.has(s.nisn.toLowerCase()))
+        .map((s) => ({ nis: s.nisn, nama: s.nama, kelas: s.kelas, jurusan: s.jurusan })),
+    [siswaTersaring, usernameAda],
+  );
 
   const prosesMassal = async () => {
     if (passwordMassal.length < 8) {
@@ -212,7 +261,18 @@ export default function AdminAkunPage() {
       return;
     }
     if (!siswaTanpaAkun.length) {
-      showErrorDialog("Tidak ada siswa yang perlu dibuatkan akun");
+      showErrorDialog(
+        tanpaNisn.length > 0
+          ? `Tidak ada siswa yang bisa dibuatkan akun. ${tanpaNisn.length} siswa pada pilihan ini belum punya NISN.`
+          : "Tidak ada siswa yang perlu dibuatkan akun pada pilihan ini",
+      );
+      return;
+    }
+    if (siswaTanpaAkun.length > 500) {
+      showErrorDialog(
+        `${siswaTanpaAkun.length} siswa terlalu banyak untuk sekali proses (maksimal 500). ` +
+          "Saring dulu per kelas atau per jurusan.",
+      );
       return;
     }
     setSubmitting(true);
@@ -448,22 +508,72 @@ export default function AdminAkunPage() {
         submitting={submitting}
       >
         <p className="smk-admin-card-sub">
-          Username setiap akun memakai NIS siswa. Password awal di bawah ini berlaku untuk semua
-          akun yang dibuat, dan siswa dapat menggantinya sendiri setelah login.
+          Username setiap akun memakai NISN siswa. Saring per kelas atau jurusan bila ingin
+          memberi password awal yang berbeda tiap rombel. Password di bawah berlaku untuk
+          siswa yang sedang tampil saja, dan bisa diganti sendiri setelah login.
         </p>
-        <div className="smk-form-group">
-          <label>Password Awal (minimal 8 karakter)</label>
-          <input value={passwordMassal} onChange={(e) => setPasswordMassal(e.target.value)} />
+
+        <div className="smk-form-row">
+          <div className="smk-form-group">
+            <label htmlFor="massal-kelas">Kelas</label>
+            <select
+              id="massal-kelas"
+              value={filterKelas}
+              onChange={(e) => setFilterKelas(e.target.value)}
+            >
+              <option value="">Semua kelas</option>
+              {opsiKelas.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="smk-form-group">
+            <label htmlFor="massal-jurusan">Jurusan</label>
+            <select
+              id="massal-jurusan"
+              value={filterJurusan}
+              onChange={(e) => setFilterJurusan(e.target.value)}
+            >
+              <option value="">Semua jurusan</option>
+              {opsiJurusan.map((j) => (
+                <option key={j} value={j}>
+                  {j}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        <div className="smk-form-group">
+          <label htmlFor="massal-password">Password Awal (minimal 8 karakter)</label>
+          <input
+            id="massal-password"
+            value={passwordMassal}
+            onChange={(e) => setPasswordMassal(e.target.value)}
+          />
+        </div>
+
         <div className="smk-form-group">
           <label>
-            Siswa yang belum punya akun:{" "}
+            Akan dibuatkan akun:{" "}
             {memuatSiswa ? "memuat..." : `${siswaTanpaAkun.length} siswa`}
           </label>
+
+          {!memuatSiswa && (sudahPunyaAkun.length > 0 || tanpaNisn.length > 0) && (
+            <p className="smk-admin-card-sub" style={{ margin: "0 0 8px" }}>
+              {sudahPunyaAkun.length > 0 && `${sudahPunyaAkun.length} sudah punya akun. `}
+              {tanpaNisn.length > 0 && `${tanpaNisn.length} dilewati karena NISN belum diisi.`}
+            </p>
+          )}
+
           <div className="smk-akun-preview">
+            {siswaTanpaAkun.length === 0 && !memuatSiswa && <div>Tidak ada siswa pada pilihan ini.</div>}
             {siswaTanpaAkun.slice(0, 50).map((s) => (
               <div key={s.nis}>
                 {s.nis} — {s.nama}
+                {s.kelas || s.jurusan ? ` (${[s.kelas, s.jurusan].filter(Boolean).join(" ")})` : ""}
               </div>
             ))}
             {siswaTanpaAkun.length > 50 && <div>dan {siswaTanpaAkun.length - 50} lainnya...</div>}

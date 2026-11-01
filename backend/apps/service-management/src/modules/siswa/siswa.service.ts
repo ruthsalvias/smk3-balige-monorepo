@@ -11,6 +11,7 @@ import {
   readSheetRows,
   writeSheetBuffer,
 } from '../../common/excel.util';
+import { FIELD_SISWA, STATUS_SISWA, uraikanRombel } from './siswa-fields';
 
 export type SiswaFileType = 'rapor' | 'skl' | 'ijazah';
 
@@ -66,7 +67,7 @@ export class SiswaService {
   }
 
   async findAll(limit = 20, offset = 0) {
-    const take = Math.min(Math.max(Number(limit) || 20, 1), 200);
+    const take = Math.min(Math.max(Number(limit) || 20, 1), 1000);
     const skip = Math.max(Number(offset) || 0, 0);
 
     const [siswa, total] = await this.siswaRepository.findAndCount({
@@ -105,7 +106,7 @@ export class SiswaService {
     const siswa = await this.siswaRepository.find({
       where,
       order: { namaLengkap: 'ASC' },
-      take: 200,
+      take: 1000,
     });
 
     return {
@@ -115,6 +116,39 @@ export class SiswaService {
         hasMore: false,
       },
     };
+  }
+
+  /** Daftar kelas dan jurusan yang benar-benar ada, untuk isi dropdown penyaring. */
+  async opsiFilter() {
+    const baris = await this.siswaRepository
+      .createQueryBuilder('siswa')
+      .select('siswa.kelas', 'kelas')
+      .addSelect('siswa.jurusan', 'jurusan')
+      .getRawMany<{ kelas: string; jurusan: string }>();
+
+    const bersih = (nilai: string) => String(nilai ?? '').trim();
+    const kelas = [...new Set(baris.map((b) => bersih(b.kelas)).filter(Boolean))].sort();
+    const jurusan = [...new Set(baris.map((b) => bersih(b.jurusan)).filter(Boolean))].sort();
+
+    return { data: { kelas, jurusan } };
+  }
+
+  /**
+   * Daftar ringkas untuk pembuatan akun massal: hanya kolom yang dibutuhkan,
+   * tanpa batas 200 seperti findAll, karena semua siswa harus ikut terbaca.
+   */
+  async ringkas(params: { kelas?: string; jurusan?: string }) {
+    const where: FindOptionsWhere<Siswa> = {};
+    if (params.kelas) where.kelas = params.kelas;
+    if (params.jurusan) where.jurusan = params.jurusan;
+
+    const siswa = await this.siswaRepository.find({
+      where,
+      select: ['id', 'nisn', 'nis', 'namaLengkap', 'kelas', 'jurusan', 'status'],
+      order: { namaLengkap: 'ASC' },
+    });
+
+    return { data: { siswa, total: siswa.length } };
   }
 
   async stats() {
@@ -287,55 +321,85 @@ export class SiswaService {
     );
   }
 
+  /**
+   * Impor dari Excel. Mendukung template sederhana lama maupun export Dapodik
+   * ("Daftar Peserta Didik") yang punya 60+ kolom dan header dua baris.
+   *
+   * Dapodik tidak memuat kolom Kelas dan Jurusan; keduanya diuraikan dari
+   * "Rombel Saat Ini" supaya penyaringan per kelas/jurusan tetap bisa dipakai.
+   */
   async importFromBuffer(buffer: Buffer) {
     const rows = await readSheetRows(buffer, [
       'NISN',
       'NIS',
+      'NIPD',
+      'Nama',
       'Nama Lengkap',
-      'Kelas',
-      'Jurusan',
       'Alamat',
+      'Rombel Saat Ini',
     ]);
 
     let imported = 0;
     let skipped = 0;
+    let tanpaNisn = 0;
+    const duplikat: string[] = [];
 
     for (const row of rows) {
-      const namaLengkap = pickField(row, ['nama lengkap', 'nama', 'namalengkap']);
-      const nisn = pickField(row, ['nisn']);
+      const payload: Record<string, string> = {};
+      for (const field of FIELD_SISWA) {
+        const nilai = pickField(row, field.excel);
+        if (nilai) payload[field.key] = nilai;
+      }
 
+      const namaLengkap = payload.namaLengkap ?? '';
+      const nisn = payload.nisn ?? '';
+
+      // Baris kosong atau baris contoh bawaan template tidak ikut masuk.
       if (!namaLengkap || isContohRow(namaLengkap, nisn)) {
         skipped += 1;
         continue;
       }
 
-      const status = pickField(row, ['status', 'status siswa']).toLowerCase();
-
-      const payload: Partial<Siswa> = {
-        namaLengkap,
-        nisn,
-        nis: pickField(row, ['nis']),
-        kelas: pickField(row, ['kelas']),
-        jurusan: pickField(row, ['jurusan']),
-        tanggalLahir: pickField(row, ['tanggal lahir', 'tanggallahir']),
-        alamat: pickField(row, ['alamat']),
-        noWaOrtu: pickField(row, ['no wa ortu', 'nowaortu', 'no wa', 'whatsapp']),
-        status: ['aktif', 'lulus', 'pindah', 'keluar'].includes(status) ? status : 'aktif',
-      };
-
-      const duplicate = payload.nisn
-        ? await this.siswaRepository.findOne({ where: { nisn: payload.nisn } })
-        : null;
-
-      if (duplicate) {
-        skipped += 1;
-        continue;
+      // Kelas dan jurusan menyatu di rombel pada export Dapodik.
+      if (payload.rombel && (!payload.kelas || !payload.jurusan)) {
+        const { kelas, jurusan } = uraikanRombel(payload.rombel);
+        if (!payload.kelas && kelas) payload.kelas = kelas;
+        if (!payload.jurusan && jurusan) payload.jurusan = jurusan;
       }
 
-      await this.siswaRepository.save(this.siswaRepository.create(payload));
+      const status = (payload.status ?? '').toLowerCase();
+      payload.status = STATUS_SISWA.includes(status) ? status : 'aktif';
+
+      // Tanpa NISN baris tetap diimpor supaya datanya tidak hilang, tapi
+      // dihitung terpisah karena belum bisa dibuatkan akun.
+      if (!nisn) {
+        tanpaNisn += 1;
+      } else {
+        const duplicate = await this.siswaRepository.findOne({ where: { nisn } });
+        if (duplicate) {
+          skipped += 1;
+          duplikat.push(namaLengkap);
+          continue;
+        }
+      }
+
+      await this.siswaRepository.save(this.siswaRepository.create(payload as Partial<Siswa>));
       imported += 1;
     }
 
-    return { message: 'Import selesai', data: { imported, skipped, total: rows.length } };
+    const catatan: string[] = [`${imported} siswa masuk`];
+    if (skipped > 0) catatan.push(`${skipped} dilewati`);
+    if (tanpaNisn > 0) catatan.push(`${tanpaNisn} tanpa NISN`);
+
+    return {
+      message: `Import selesai: ${catatan.join(', ')}.`,
+      data: {
+        imported,
+        skipped,
+        tanpaNisn,
+        total: rows.length,
+        duplikat: duplikat.slice(0, 20),
+      },
+    };
   }
 }

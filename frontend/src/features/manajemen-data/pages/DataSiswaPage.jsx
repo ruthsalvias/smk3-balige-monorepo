@@ -12,21 +12,13 @@ import manajemenApi from "../api/manajemenApi.js";
 import { showSuccessDialog, showErrorDialog } from "../../../helpers/toolsHelper";
 import "../resources/manajemen.css";
 import AdminLayout from "../../admin/layouts/AdminLayout.jsx";
-import DetailModal from "../components/DetailModal.jsx";
 import RowActionMenu from "../components/RowActionMenu.jsx";
 import Icon from "../../../components/Icon";
-import DaftarDokumen from "../../../components/DaftarDokumen";
 import KonfirmasiHapusMassal, {
   BilahPilihan,
   KotakPilih,
   KotakPilihSemua,
 } from "../../../components/HapusMassal";
-import {
-  JENIS_DOKUMEN,
-  kelompokkanDokumen,
-  lihatDokumenSiswa,
-  unduhDokumenSiswa,
-} from "../../akun/api/dokumenApi";
 
 export default function DataSiswaPage() {
   const dispatch = useDispatch();
@@ -44,7 +36,6 @@ export default function DataSiswaPage() {
   const [offset,        setOffset]        = useState(0);
   const [importLoading, setImportLoading] = useState(false);
   const [deleteModal,   setDeleteModal]   = useState({ open: false, id: null, nama: "" });
-  const [detailItem,    setDetailItem]    = useState(null);
 
   const perPage     = 20;
   const currentPage = Math.floor(offset / perPage) + 1;
@@ -130,21 +121,6 @@ export default function DataSiswaPage() {
     await manajemenApi.exportSiswa({ search });
   };
 
-  const lihatDokumen = async (siswaId, dok) => {
-    try {
-      await lihatDokumenSiswa(siswaId, dok.id);
-    } catch (err) {
-      showErrorDialog(err.message);
-    }
-  };
-
-  const unduhDokumen = async (siswaId, dok) => {
-    try {
-      await unduhDokumenSiswa(siswaId, dok.id, dok.nama);
-    } catch (err) {
-      showErrorDialog(err.message);
-    }
-  };
 
   const handleDeleteClick   = (item) => setDeleteModal({ open: true, id: item.id, nama: item.namaLengkap });
   const handleDeleteCancel  = ()     => setDeleteModal({ open: false, id: null, nama: "" });
@@ -326,7 +302,7 @@ export default function DataSiswaPage() {
                     </td>
                     <td className="aksi">
                       <RowActionMenu
-                        onDetail={() => setDetailItem(item)}
+                        onDetail={() => navigate(adminPath(`/data/siswa/${item.id}`))}
                         onEdit={() => navigate(adminPath(`/data/siswa/edit/${item.id}`))}
                         onDelete={() => handleDeleteClick(item)}
                       />
@@ -396,37 +372,6 @@ export default function DataSiswaPage() {
           <div style={{ borderTop: "1px solid #e5e7eb", margin: "32px 0" }} />
         </div>
       </section>
-
-      {/* MODAL DETAIL */}
-      {detailItem && (
-        <DetailModal
-          title={detailItem.namaLengkap}
-          subtitle={`${detailItem.kelas || "-"} · ${detailItem.jurusan || "-"}`}
-          onClose={() => setDetailItem(null)}
-          onEdit={() => navigate(adminPath(`/data/siswa/edit/${detailItem.id}`))}
-          fields={[
-            { label: "NISN", value: detailItem.nisn },
-            { label: "NIS", value: detailItem.nis },
-            { label: "Nama Lengkap", value: detailItem.namaLengkap },
-            { label: "Kelas", value: detailItem.kelas },
-            { label: "Jurusan", value: detailItem.jurusan },
-            { label: "Tanggal Lahir", value: detailItem.tanggalLahir },
-            { label: "Alamat", value: detailItem.alamat },
-            { label: "No WA Orang Tua", value: detailItem.noWaOrtu },
-            { label: "Status", value: detailItem.status === "lulus" ? "Lulus" : "Aktif" },
-            ...JENIS_DOKUMEN.map((d) => ({
-              label: d.label,
-              value: (
-                <DaftarDokumen
-                  dokumen={kelompokkanDokumen(detailItem)[d.nilai]}
-                  onLihat={(dok) => lihatDokumen(detailItem.id, dok)}
-                  onUnduh={(dok) => unduhDokumen(detailItem.id, dok)}
-                />
-              ),
-            })),
-          ]}
-        />
-      )}
 
       {/* MODAL HAPUS MASSAL */}
       <KonfirmasiHapusMassal

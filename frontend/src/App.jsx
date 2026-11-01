@@ -28,6 +28,7 @@ import AdminSklPage from "./features/admin/pages/AdminSklPage";
 import DataSiswaPage from "./features/manajemen-data/pages/DataSiswaPage";
 import AddSiswaPage from "./features/manajemen-data/pages/AddSiswaPage";
 import EditSiswaPage from "./features/manajemen-data/pages/EditSiswaPage";
+import DetailSiswaPage from "./features/manajemen-data/pages/DetailSiswaPage";
 import DataGuruPage from "./features/manajemen-data/pages/DataGuruPage";
 import AddGuruPage from "./features/manajemen-data/pages/AddGuruPage";
 import EditGuruPage from "./features/manajemen-data/pages/EditGuruPage";
@@ -81,6 +82,7 @@ function App() {
         <Route path={`${ADMIN_PATH}/data/siswa`} element={<DataSiswaPage/>} />
         <Route path={`${ADMIN_PATH}/data/siswa/add`} element={<AddSiswaPage/>} />
         <Route path={`${ADMIN_PATH}/data/siswa/edit/:id`} element={<EditSiswaPage/>} />
+        <Route path={`${ADMIN_PATH}/data/siswa/:id`} element={<DetailSiswaPage/>} />
 
         <Route path={`${ADMIN_PATH}/data/guru`} element={<DataGuruPage/>} />
         <Route path={`${ADMIN_PATH}/data/guru/add`} element={<AddGuruPage/>} />
